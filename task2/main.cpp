@@ -35,6 +35,20 @@ void init_u1(Block &b, const Block &u0, double tau) {
     } 
 }
 
+void step(Block &u2, const Block& u1, const Block& u0, double tau) {
+    int sizeI = u2.getSizeI();
+    int sizeJ = u2.getSizeJ();
+    int sizeK = u2.getSizeK();
+
+    for (int i = 1; i < sizeI - 1; i++) {
+        for (int j = 1; j < sizeJ - 1; j++) {
+            for (int k = 1; k < sizeK - 1; k++) {
+                u2.getElem(i, j, k) = 2 * u1.getValElem(i, j, k) - u0.getValElem(i, j, k) + pow(tau, 2) * u1.lap_h(i, j, k);
+            }
+        }
+    }
+}
+
 int main(int argc, char** argv) {
     if (argc < 9) {
         std::cout << "A few argument" << std::endl;
@@ -51,8 +65,6 @@ int main(int argc, char** argv) {
     int bCountK = atoi(argv[9]);
     double tau = T / K;
 
-    //printf("Lx: %lf; Ly: %lf; Lz: %lf;\nT: %lf; N: %d; K: %d;\nCountI: %d; CountJ: %d; CountK: %d;\n", Lx, Ly, Lz, T, N, K, bCountI, bCountJ, bCountK);
-
     Function3D u_a(Lx, Ly, Lz);
     MPI_Request request;
     MPI_Status status;
@@ -61,16 +73,6 @@ int main(int argc, char** argv) {
 
     Process p(bCountI, bCountJ, bCountK, N, request, status);
 
-    // std::vector<Block> massB;
-    // for (int i = 0; i < 3; i++) {
-    //     massB.push_back( 
-    //         Block(
-    //             p.getSizeX(), p.getSizeY(), p.getSizeZ(),
-    //             p.get_i(), p.get_j(), p.get_k(),
-    //             Lx / N, Ly / N, Lz / N
-    //         )
-    //     );
-    // }
     std::vector<Block> massB (3,
         Block(
             p.getSizeX(), p.getSizeY(), p.getSizeZ(),
@@ -86,19 +88,11 @@ int main(int argc, char** argv) {
     p.printError(massB[1], u_a, tau);
     p.update(massB[1]);
 
-    //p.sendDownI(massB[1].getDownI(), request);
-    //p.sendUpI(massB[1].getUpI(), request);
-    //p.sendDownJ(massB[1].getDownJ(), request);
-    //p.sendUpJ(massB[1].getUpJ(), request);
-    //p.sendDownK(massB[1].getDownK(), request);
-    //p.sendUpK(massB[1].getUpK(), request);
-
-    // for (int t = 1; t < K; t++) {
-
-
-    // }
-    //std::cout << p.getRank();
-    //massB.clear();
+    for (int t = 2; t < K; t++) {
+        step(massB[t % 3], massB[(t + 2) % 3], massB[(t + 1) % 3], tau);
+        p.printError(massB[t % 3], u_a, tau * t);
+        p.update(massB[t % 3]);
+    }
     MPI_Finalize();
     return 0; 
 }
