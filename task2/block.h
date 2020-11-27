@@ -40,12 +40,12 @@ public:
     double& getElem(int i, int j, int k);
     double getValElem(int i, int j, int k) const;
 
-    std::vector<double> getDownX();
-    std::vector<double> getUpX();
-    std::vector<double> getDownY();
-    std::vector<double> getUpY();
-    std::vector<double> getDownZ();
-    std::vector<double> getUpZ();
+    std::vector<double> getDownI();
+    std::vector<double> getUpI();
+    std::vector<double> getDownJ();
+    std::vector<double> getUpJ();
+    std::vector<double> getDownK();
+    std::vector<double> getUpK();
 
     void setDownX(std::vector<double>& downX);
     void setUpX(std::vector<double>& upX);

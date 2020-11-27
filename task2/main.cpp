@@ -4,7 +4,7 @@
 
 #include "function.h"
 #include "block.h"
-#include "process.hpp"
+#include "process.h"
 
 
 void init_u0(Block &b, Function3D &u) {
@@ -46,15 +46,17 @@ int main(int argc, char** argv) {
     double T = atof(argv[4]);
     int N = atoi(argv[5]);
     int K = atoi(argv[6]);
-    int bCountX = atoi(argv[7]);
-    int bCountY = atoi(argv[8]);
-    int bCountZ = atoi(argv[9]);
+    int bCountI = atoi(argv[7]);
+    int bCountJ = atoi(argv[8]);
+    int bCountK = atoi(argv[9]);
 
     Function3D u_a(Lx, Ly, Lz);
+    MPI_Request request;
+    MPI_Status status;
 
     MPI_Init(&argc, &argv);
 
-    Process p(bCountX, bCountY, bCountZ, N);
+    Process p(bCountI, bCountJ, bCountK, N);
 
     std::vector<Block> massB (3, 
         Block(
@@ -66,6 +68,18 @@ int main(int argc, char** argv) {
 
     init_u0(massB[0], u_a);
     init_u1(massB[1], massB[0], T / K);
+
+    //p.sendDownI(massB[1].getDownI(), request);
+    //p.sendUpI(massB[1].getUpI(), request);
+    //p.sendDownJ(massB[1].getDownJ(), request);
+    //p.sendUpJ(massB[1].getUpJ(), request);
+    //p.sendDownK(massB[1].getDownK(), request);
+    //p.sendUpK(massB[1].getUpK(), request);
+
+    for (int t = 1; t < K; t++) {
+
+
+    }
     //std::cout << p.getRank();
     
     MPI_Finalize();
