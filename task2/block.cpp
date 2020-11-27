@@ -1,13 +1,16 @@
 #include "block.h"
 
-Block::Block(int sizeI, int sizeJ, int sizeK, int minI, int minJ, int minK) 
+Block::Block(int sizeI, int sizeJ, int sizeK, 
+    int minI, int minJ, int minK,
+    double shiftX, double shiftY, double shiftZ) 
         : _sizeI(sizeI + 2), _sizeJ(sizeJ + 2), _sizeK(sizeK + 2),
-        _minI(minI), _minJ(minJ),_minK(minK) 
+        _minI(minI), _minJ(minJ),_minK(minK),
+        _shiftX(shiftX), _shiftY(shiftY), _shiftZ(shiftZ) 
 {
     _raw.resize(sizeI * sizeJ * sizeK, 0.0);
 }
 
-double Block::getValElem(int i, int j, int k) {
+double Block::getValElem(int i, int j, int k) const {
     return _raw[i * (_sizeJ * _sizeK) + j * _sizeK + k];
 }
 
@@ -25,6 +28,7 @@ double Block::operator()(int i, int j, int k) const {
     return _raw[i * (_sizeJ * _sizeK) + j * _sizeK + k];
 }
 
+//Uncorrect 0 -> 1 size* - 1 -> size* - 2
 //GetX
 std::vector<double> Block::getDownX() { 
     std::vector<double> downX ((_sizeJ - 2) * (_sizeK - 2), 0);
@@ -137,4 +141,10 @@ void Block::setUpZ(std::vector<double>& upZ) {
             this->getElem(i, j, _sizeK - 1) = upZ[i * (_sizeJ * _sizeK) + j * _sizeK];
         }
     }
+}
+
+double Block::lap_h(int i, int j, int k) const {
+    return (getValElem(i - 1, j, k) - 2 * getValElem(i, j, k) + getValElem(i + 1, j, k)) / pow(_shiftX, 2) + 
+        (getValElem(i, j - 1, k) - 2 * getValElem(i, j, k) + getValElem(i, j + 1, k)) / pow(_shiftY, 2) +
+        (getValElem(i, j, k - 1) - 2 * getValElem(i, j, k) + getValElem(i, j, k + 1)) / pow(_shiftZ, 2); 
 }
