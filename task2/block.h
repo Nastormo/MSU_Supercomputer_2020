@@ -1,6 +1,9 @@
 #pragma once
 #include <vector>
 #include <math.h>
+#include <stdio.h>
+
+#include "function.h"
 
 class Block {
     std::vector<double> _raw;
@@ -22,6 +25,9 @@ public:
         int minI, int minJ, int minK, 
         double shiftX, double shiftY, double shiftZ);
 
+    void printBlock() const;
+    double getError(Function3D &u, double t) const;
+
     int getSizeI() { return _sizeI; }
     int getSizeJ() { return _sizeJ; }
     int getSizeK() { return _sizeK; }
@@ -30,9 +36,9 @@ public:
     int getMinJ() { return _minJ; }
     int getMinK() { return _minK; }
 
-    double getX(int i) { return (i + _minI) * _shiftX; }
-    double getY(int j) { return (j + _minJ) * _shiftY; }
-    double getZ(int k) { return (k + _minK) * _shiftZ; }
+    double getX(int i) const { return (i + _minI) * _shiftX; }
+    double getY(int j) const { return (j + _minJ) * _shiftY; }
+    double getZ(int k) const { return (k + _minK) * _shiftZ; }
 
     double &operator()(int i, int j, int k);
     double operator()(int i, int j, int k) const;
@@ -40,19 +46,19 @@ public:
     double& getElem(int i, int j, int k);
     double getValElem(int i, int j, int k) const;
 
-    std::vector<double> getDownI();
-    std::vector<double> getUpI();
-    std::vector<double> getDownJ();
-    std::vector<double> getUpJ();
-    std::vector<double> getDownK();
-    std::vector<double> getUpK();
+    std::vector<double> getDownI() const;
+    std::vector<double> getUpI() const;
+    std::vector<double> getDownJ() const;
+    std::vector<double> getUpJ() const;
+    std::vector<double> getDownK() const;
+    std::vector<double> getUpK() const;
 
-    void setDownX(std::vector<double>& downX);
-    void setUpX(std::vector<double>& upX);
-    void setDownY(std::vector<double>& downY);
-    void setUpY(std::vector<double>& upY);
-    void setDownZ(std::vector<double>& downZ);
-    void setUpZ(std::vector<double>& upZ);
+    void setDownI(const std::vector<double>& downI);
+    void setUpI(const std::vector<double>& upI);
+    void setDownJ(const std::vector<double>& downJ);
+    void setUpJ(const std::vector<double>& upJ);
+    void setDownK(const std::vector<double>& downK);
+    void setUpK(const std::vector<double>& upK);
 
     double lap_h(int i, int j, int k) const;
 };

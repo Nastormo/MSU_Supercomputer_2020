@@ -1,6 +1,9 @@
-#pragma onece
+#pragma once
 #include <mpi.h>
 #include <vector>
+
+#include "block.h"
+#include "function.h"
 
 class Process {
     int _rank;
@@ -22,22 +25,31 @@ class Process {
     int _bmin_j;
     int _bmin_k;
 
+    MPI_Request _request;
+    MPI_Status _status;
+
 public:  
-    Process(int countI, int countJ, int countK, int N);
+    Process(int countI, int countJ, int countK, int N, MPI_Request &request, MPI_Status &status);
 
-    void sendDownI(std::vector<double> downI, MPI_Request &request);
-    void sendUpI(std::vector<double> upI, MPI_Request &request);
-    void sendDownJ(std::vector<double> downJ, MPI_Request &request);
-    void sendUpJ(std::vector<double> upJ, MPI_Request &request);
-    void sendDownK(std::vector<double> downK, MPI_Request &request);
-    void sendUpK(std::vector<double> upK, MPI_Request &request);
+    void printError(const Block& b, Function3D &u, double t);
 
-    std::vector<double> recvDownI(MPI_Status &status);
-    std::vector<double> recvUpI(MPI_Status &status);
-    std::vector<double> recvDownJ(MPI_Status &status);
-    std::vector<double> recvUpJ(MPI_Status &status);
-    std::vector<double> recvDownK(MPI_Status &status);
-    std::vector<double> recvUpK(MPI_Status &status);
+    void update(Block &b);
+    void sendNeighbors(const Block &b);
+    void recvNeighbors(Block &b);
+
+    void sendDownI(std::vector<double> downI);
+    void sendUpI(std::vector<double> upI);
+    void sendDownJ(std::vector<double> downJ);
+    void sendUpJ(std::vector<double> upJ);
+    void sendDownK(std::vector<double> downK);
+    void sendUpK(std::vector<double> upK);
+
+    std::vector<double> recvDownI();
+    std::vector<double> recvUpI();
+    std::vector<double> recvDownJ();
+    std::vector<double> recvUpJ();
+    std::vector<double> recvDownK();
+    std::vector<double> recvUpK();
 
     int getRank() { return _rank; }
     int getOtherRank(int i, int j, int k) { return i * (_countJ * _countK) + j * _countK + k; }

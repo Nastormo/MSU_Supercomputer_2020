@@ -1,5 +1,7 @@
 #pragma once
 #include <math.h>
+#include <stdio.h>
+#include <algorithm>
 
 class Function3D {
     double _Lx;
