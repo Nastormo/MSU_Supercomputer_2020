@@ -12,6 +12,7 @@ void init_u0(Block &b, Function3D &u) {
     int sizeJ = b.getSizeJ();
     int sizeK = b.getSizeK();
 
+    #pragma omp parallel for
     for (int i = 1; i < sizeI - 1; i++) {
         for (int j = 1; j < sizeJ - 1; j++) {
             for (int k = 1; k < sizeK - 1; k++) {
@@ -26,6 +27,7 @@ void init_u1(Block &b, const Block &u0, double tau, Function3D &u) {
     int sizeJ = b.getSizeJ();
     int sizeK = b.getSizeK();
 
+    #pragma omp parallel for
     for (int i = 1; i < sizeI - 1; i++) {
         for (int j = 1; j < sizeJ - 1; j++) {
             for (int k = 1; k < sizeK - 1; k++) {
@@ -40,16 +42,11 @@ void step(Block &u2, const Block& u1, const Block& u0, double tau, Function3D &u
     int sizeJ = u2.getSizeJ();
     int sizeK = u2.getSizeK();
 
+    #pragma omp parallel for
     for (int i = 1; i < sizeI - 1; i++) {
         for (int j = 1; j < sizeJ - 1; j++) {
             for (int k = 1; k < sizeK - 1; k++) {
                 u2.getElem(i, j, k) = 2 * u1.getValElem(i, j, k) - u0.getValElem(i, j, k) + pow(tau, 2) * u1.lap_h(i, j, k);
-                // if (abs(u2.getValElem(i, j, k) - u(u2.getX(i), u2.getY(j), u2.getZ(k), tau)) > 740.0) {
-                //     printf("%d %d %d %d %d %d %lf\n", sizeI, sizeJ, sizeK, i, j, k, (pow(tau, 2) / 2) * u1.lap_h(i, j, k));
-                //     printf("\t%lf %lf %lf\n", u1.getValElem(i - 1, j, k), u1.getValElem(i, j, k), u1.getValElem(i + 1, j, k));
-                //     printf("\t%lf %lf %lf\n", u1.getValElem(i, j - 1, k), u1.getValElem(i, j, k), u1.getValElem(i, j + 1, k));
-                //     printf("\t%lf %lf %lf\n", u1.getValElem(i, j, k - 1), u1.getValElem(i, j, k), u1.getValElem(i, j, k + 1));
-                // }
             }
         }
     }

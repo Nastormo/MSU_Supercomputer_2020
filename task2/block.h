@@ -2,6 +2,8 @@
 #include <vector>
 #include <math.h>
 #include <stdio.h>
+#include <algorithm>
+#include <cmath>
 
 #include "function.h"
 

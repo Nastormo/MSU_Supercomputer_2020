@@ -25,6 +25,8 @@ class Process {
     int _bmin_j;
     int _bmin_k;
 
+    double _startTime;
+
     MPI_Request _request;
     MPI_Request _downI;
     MPI_Request _upI;
@@ -36,6 +38,7 @@ class Process {
 
 public:  
     Process(int countI, int countJ, int countK, int N);
+    ~Process();
 
     void printError(const Block& b, Function3D &u, double t);
 

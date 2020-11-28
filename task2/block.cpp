@@ -44,10 +44,11 @@ void Block::printDiff(Function3D& u, double t) const {
 
 double Block::getError(Function3D& u, double t) const {
     double error = 0;
+    #pragma omp parallel for
     for (int i = 1; i < _sizeI - 1; i++) {
         for (int j = 1; j < _sizeJ - 1; j++) {
             for (int k = 1; k < _sizeK - 1; k++) {
-                error = std::max(abs(getValElem(i, j, k) -  u(getX(i), getY(j), getZ(k), t)), error);
+                error = std::max(std::abs(getValElem(i, j, k) -  u(getX(i), getY(j), getZ(k), t)), error);
             }
         }
     }
@@ -76,6 +77,7 @@ double Block::operator()(int i, int j, int k) const {
 //GetX
 std::vector<double> Block::getDownI() const { 
     std::vector<double> downX ((_sizeJ - 2) * (_sizeK - 2), 0);
+    #pragma omp parallel for
     for (int j = 1; j < _sizeJ - 1; j++) {
         for (int k = 1; k < _sizeK - 1; k++) {
             downX[(j - 1) * (_sizeK - 2) + (k - 1)] = getValElem(1, j, k);
@@ -86,6 +88,7 @@ std::vector<double> Block::getDownI() const {
 
 std::vector<double> Block::getUpI() const { 
     std::vector<double> upX ((_sizeJ - 2) * (_sizeK - 2), 0);
+    #pragma omp parallel for
     for (int j = 1; j < _sizeJ - 1; j++) {
         for (int k = 1; k < _sizeK - 1; k++) {
             upX[(j - 1) * (_sizeK - 2) + (k - 1)] = getValElem(_sizeI - 2, j, k);
@@ -97,6 +100,7 @@ std::vector<double> Block::getUpI() const {
 //GetY
 std::vector<double> Block::getDownJ() const { 
     std::vector<double> downY ((_sizeI - 2) * (_sizeK - 2), 0);
+    #pragma omp parallel for
     for (int i = 1; i < _sizeI - 1; i++) {
         for (int k = 1; k < _sizeK - 1; k++) {
             downY[(i - 1) *  (_sizeK - 2) + (k - 1)] = getValElem(i, 1, k);
@@ -107,6 +111,7 @@ std::vector<double> Block::getDownJ() const {
 
 std::vector<double> Block::getUpJ() const { 
     std::vector<double> upY ((_sizeI - 2) * (_sizeK - 2), 0);
+    #pragma omp parallel for
     for (int i = 1; i < _sizeI - 1; i++) {
         for (int k = 1; k < _sizeK - 1; k++) {
             upY[(i - 1) * (_sizeK - 2) + (k - 1)] = getValElem(i, _sizeJ - 2, k);
@@ -118,6 +123,7 @@ std::vector<double> Block::getUpJ() const {
 //GetZ
 std::vector<double> Block::getDownK() const { 
     std::vector<double> downZ ((_sizeI - 2) * (_sizeJ - 2), 0);
+    #pragma omp parallel for
     for (int i = 1; i < _sizeI - 1; i++) {
         for (int j = 1; j < _sizeJ - 1; j++) {
             downZ[(i - 1) * (_sizeJ - 2) + (j - 1)] = getValElem(i, j, 1);
@@ -128,6 +134,7 @@ std::vector<double> Block::getDownK() const {
 
 std::vector<double> Block::getUpK() const { 
     std::vector<double> upZ ((_sizeI - 2) * (_sizeJ - 2), 0);
+    #pragma omp parallel for
     for (int i = 1; i < _sizeI - 1; i++) {
         for (int j = 1; j < _sizeJ - 1; j++) {
             upZ[(i - 1) * (_sizeJ - 2) + (j - 1)] = getValElem(i, j, _sizeK - 2);
@@ -138,6 +145,7 @@ std::vector<double> Block::getUpK() const {
 
 //SetX
 void Block::setDownI(const std::vector<double>& downI) {
+    #pragma omp parallel for
     for (int j = 1; j < _sizeJ - 1; j++) {
         for (int k = 1; k < _sizeK - 1; k++) {
             getElem(0, j, k) = downI[(j - 1) * (_sizeK - 2) + (k - 1)];
@@ -146,6 +154,7 @@ void Block::setDownI(const std::vector<double>& downI) {
 }
 
 void Block::setUpI(const std::vector<double>& upI) {
+    #pragma omp parallel for
     for (int j = 1; j < _sizeJ - 1; j++) {
         for (int k = 1; k < _sizeK - 1; k++) {
             getElem(_sizeI - 1, j, k) = upI[(j - 1) * (_sizeK - 2) + (k - 1)];
@@ -155,6 +164,7 @@ void Block::setUpI(const std::vector<double>& upI) {
 
 //SetY
 void Block::setDownJ(const std::vector<double>& downJ) {
+    #pragma omp parallel for
     for (int i = 1; i < _sizeI - 1; i++) {
         for (int k = 1; k < _sizeK - 1; k++) {
             getElem(i, 0, k) = downJ[(i - 1) * (_sizeK - 2) + (k - 1)];
@@ -163,6 +173,7 @@ void Block::setDownJ(const std::vector<double>& downJ) {
 }
 
 void Block::setUpJ(const std::vector<double>& upJ) {
+    #pragma omp parallel for
     for (int i = 1; i < _sizeI - 1; i++) {
         for (int k = 1; k < _sizeK - 1; k++) {
             getElem(i, _sizeJ - 1, k) = upJ[(i - 1) * (_sizeK - 2) + (k - 1)];
@@ -172,6 +183,7 @@ void Block::setUpJ(const std::vector<double>& upJ) {
 
 //SetZ
 void Block::setDownK(const std::vector<double>& downK) {
+    #pragma omp parallel for
     for (int i = 1; i < _sizeI - 1; i++) {
         for (int j = 1; j < _sizeJ - 1; j++) {
             getElem(i, j, 0) = downK[(i - 1) * (_sizeJ - 2) + (j - 1)];
@@ -180,6 +192,7 @@ void Block::setDownK(const std::vector<double>& downK) {
 }
 
 void Block::setUpK(const std::vector<double>& upK) {
+    #pragma omp parallel for
     for (int i = 1; i < _sizeI - 1; i++) {
         for (int j = 1; j < _sizeJ - 1; j++) {
             getElem(i, j, _sizeK - 1) = upK[(i - 1) * (_sizeJ - 2) + (j - 1)];

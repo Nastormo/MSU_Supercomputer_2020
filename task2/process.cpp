@@ -18,6 +18,14 @@ Process::Process(int countI, int countJ, int countK, int N)
     _bmin_i = _bsize_I * _curI;
     _bmin_j = _bsize_J * _curJ;
     _bmin_k = _bsize_K * _curK;
+
+    _startTime = MPI_Wtime();
+}
+
+Process::~Process() {
+    if(_rank == 0) {
+        printf("Elapsed time = %lf\n", MPI_Wtime() - _startTime);
+    }
 }
 
 void Process::printError(const Block& b, Function3D &u, double t) {
@@ -48,12 +56,6 @@ void Process::update(Block &b) {
     std::vector<double> rupI = recvUpI();
     b.setUpI(rupI);
 
-    // printf("RecvUpI:%d\n",getOtherRank(_curI + 1, _curJ, _curK));
-    // for(int i = 0; i < upI.size(); i++) {
-    //     printf("%lf ", upI[i]);
-    // }
-    // printf("\n");
-
     sendUpI(upI);
     std::vector<double> rdownI = recvDownI();
     b.setDownI(rdownI);
@@ -65,7 +67,7 @@ void Process::update(Block &b) {
     sendUpJ(upJ);
     std::vector<double> rdownJ = recvDownJ();
     b.setDownJ(rdownJ);
-
+ 
     sendDownK(downK);
     std::vector<double> rupK = recvUpK();
     b.setUpK(rupK);
@@ -150,7 +152,7 @@ std::vector<double> Process::recvDownJ() {
     if (_curJ > 0) {
         MPI_Recv(downJ.data(), downJ.size(), MPI_DOUBLE,
             getOtherRank(_curI, _curJ - 1, _curK),
-            0, MPI_COMM_WORLD, &_status);
+            0, MPI_COMM_WORLD, &_status);       
     }
     return downJ;
 }
