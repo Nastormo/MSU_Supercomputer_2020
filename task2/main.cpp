@@ -21,7 +21,7 @@ void init_u0(Block &b, Function3D &u) {
     }
 }
 
-void init_u1(Block &b, const Block &u0, double tau) {
+void init_u1(Block &b, const Block &u0, double tau, Function3D &u) {
     int sizeI = b.getSizeI();
     int sizeJ = b.getSizeJ();
     int sizeK = b.getSizeK();
@@ -35,7 +35,7 @@ void init_u1(Block &b, const Block &u0, double tau) {
     } 
 }
 
-void step(Block &u2, const Block& u1, const Block& u0, double tau) {
+void step(Block &u2, const Block& u1, const Block& u0, double tau, Function3D &u) {
     int sizeI = u2.getSizeI();
     int sizeJ = u2.getSizeJ();
     int sizeK = u2.getSizeK();
@@ -44,6 +44,12 @@ void step(Block &u2, const Block& u1, const Block& u0, double tau) {
         for (int j = 1; j < sizeJ - 1; j++) {
             for (int k = 1; k < sizeK - 1; k++) {
                 u2.getElem(i, j, k) = 2 * u1.getValElem(i, j, k) - u0.getValElem(i, j, k) + pow(tau, 2) * u1.lap_h(i, j, k);
+                // if (abs(u2.getValElem(i, j, k) - u(u2.getX(i), u2.getY(j), u2.getZ(k), tau)) > 740.0) {
+                //     printf("%d %d %d %d %d %d %lf\n", sizeI, sizeJ, sizeK, i, j, k, (pow(tau, 2) / 2) * u1.lap_h(i, j, k));
+                //     printf("\t%lf %lf %lf\n", u1.getValElem(i - 1, j, k), u1.getValElem(i, j, k), u1.getValElem(i + 1, j, k));
+                //     printf("\t%lf %lf %lf\n", u1.getValElem(i, j - 1, k), u1.getValElem(i, j, k), u1.getValElem(i, j + 1, k));
+                //     printf("\t%lf %lf %lf\n", u1.getValElem(i, j, k - 1), u1.getValElem(i, j, k), u1.getValElem(i, j, k + 1));
+                // }
             }
         }
     }
@@ -71,7 +77,7 @@ int main(int argc, char** argv) {
 
     MPI_Init(&argc, &argv);
 
-    Process p(bCountI, bCountJ, bCountK, N, request, status);
+    Process p(bCountI, bCountJ, bCountK, N);
 
     std::vector<Block> massB (3,
         Block(
@@ -84,12 +90,12 @@ int main(int argc, char** argv) {
     init_u0(massB[0], u_a);
     p.printError(massB[0], u_a, 0.0);
     p.update(massB[0]);
-    init_u1(massB[1], massB[0], tau);
+    init_u1(massB[1], massB[0], tau, u_a);
     p.printError(massB[1], u_a, tau);
     p.update(massB[1]);
 
     for (int t = 2; t < K; t++) {
-        step(massB[t % 3], massB[(t + 2) % 3], massB[(t + 1) % 3], tau);
+        step(massB[t % 3], massB[(t + 2) % 3], massB[(t + 1) % 3], tau, u_a);
         p.printError(massB[t % 3], u_a, tau * t);
         p.update(massB[t % 3]);
     }

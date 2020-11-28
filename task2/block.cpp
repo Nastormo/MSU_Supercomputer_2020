@@ -12,12 +12,28 @@ Block::Block(int sizeI, int sizeJ, int sizeK,
 
 void Block::printBlock() const {
     printf("Size: %d %d %d\n", _sizeI, _sizeJ, _sizeK);
-    for (int i = 0; i < _sizeI; i++) {
+    for (int i = 1; i < _sizeI - 1; i++) {
         printf("%d:\n", i);
-        for (int j = 0; j < _sizeJ; j++) {
+        for (int j = 1; j < _sizeJ - 1; j++) {
             printf("\t%d:\n", j);
-            for (int k = 0; k < _sizeK; k++) {
+            for (int k = 1; k < _sizeK - 1; k++) {
                 printf("%lf ", getValElem(i, j, k));
+            }
+            printf("\n");
+        }
+        printf("\n");
+    }
+    printf("\n");
+}
+
+void Block::printDiff(Function3D& u, double t) const {
+    printf("Size: %d %d %d\n", _sizeI, _sizeJ, _sizeK);
+    for (int i = 1; i < _sizeI - 1; i++) {
+        printf("%d:\n", i);
+        for (int j = 1; j < _sizeJ - 1; j++) {
+            printf("\t%d:\n", j);
+            for (int k = 1; k < _sizeK - 1; k++) {
+                printf("%lf ", getValElem(i, j, k) - u(getX(i), getY(j), getZ(k), t));
             }
             printf("\n");
         }
@@ -72,7 +88,7 @@ std::vector<double> Block::getUpI() const {
     std::vector<double> upX ((_sizeJ - 2) * (_sizeK - 2), 0);
     for (int j = 1; j < _sizeJ - 1; j++) {
         for (int k = 1; k < _sizeK - 1; k++) {
-            upX[(j - 1) * (_sizeK - 2) + (k - 1)] = this->getValElem(_sizeI - 2, j, k);
+            upX[(j - 1) * (_sizeK - 2) + (k - 1)] = getValElem(_sizeI - 2, j, k);
         }
     }
     return upX;
@@ -83,7 +99,7 @@ std::vector<double> Block::getDownJ() const {
     std::vector<double> downY ((_sizeI - 2) * (_sizeK - 2), 0);
     for (int i = 1; i < _sizeI - 1; i++) {
         for (int k = 1; k < _sizeK - 1; k++) {
-            downY[(i - 1) *  (_sizeK - 2) + (k - 1)] = this->getValElem(i, 1, k);
+            downY[(i - 1) *  (_sizeK - 2) + (k - 1)] = getValElem(i, 1, k);
         }
     }
     return downY;
@@ -93,7 +109,7 @@ std::vector<double> Block::getUpJ() const {
     std::vector<double> upY ((_sizeI - 2) * (_sizeK - 2), 0);
     for (int i = 1; i < _sizeI - 1; i++) {
         for (int k = 1; k < _sizeK - 1; k++) {
-            upY[(i - 1) * (_sizeK - 2) + (k - 1)] = this->getValElem(i, _sizeJ - 2, k);
+            upY[(i - 1) * (_sizeK - 2) + (k - 1)] = getValElem(i, _sizeJ - 2, k);
         }
     }
     return upY;
@@ -104,7 +120,7 @@ std::vector<double> Block::getDownK() const {
     std::vector<double> downZ ((_sizeI - 2) * (_sizeJ - 2), 0);
     for (int i = 1; i < _sizeI - 1; i++) {
         for (int j = 1; j < _sizeJ - 1; j++) {
-            downZ[(i - 1) * (_sizeJ - 2) + (j - 1)] = this->getValElem(i, j, 1);
+            downZ[(i - 1) * (_sizeJ - 2) + (j - 1)] = getValElem(i, j, 1);
         }
     }
     return downZ;
@@ -114,7 +130,7 @@ std::vector<double> Block::getUpK() const {
     std::vector<double> upZ ((_sizeI - 2) * (_sizeJ - 2), 0);
     for (int i = 1; i < _sizeI - 1; i++) {
         for (int j = 1; j < _sizeJ - 1; j++) {
-            upZ[(i - 1) * (_sizeJ - 2) + (j - 1)] = this->getValElem(i, j, _sizeK - 2);
+            upZ[(i - 1) * (_sizeJ - 2) + (j - 1)] = getValElem(i, j, _sizeK - 2);
         }
     }
     return upZ;
@@ -141,7 +157,7 @@ void Block::setUpI(const std::vector<double>& upI) {
 void Block::setDownJ(const std::vector<double>& downJ) {
     for (int i = 1; i < _sizeI - 1; i++) {
         for (int k = 1; k < _sizeK - 1; k++) {
-            this->getElem(i, 0, k) = downJ[(i - 1) * (_sizeK - 2) + (k - 1)];
+            getElem(i, 0, k) = downJ[(i - 1) * (_sizeK - 2) + (k - 1)];
         }
     }
 }
@@ -149,7 +165,7 @@ void Block::setDownJ(const std::vector<double>& downJ) {
 void Block::setUpJ(const std::vector<double>& upJ) {
     for (int i = 1; i < _sizeI - 1; i++) {
         for (int k = 1; k < _sizeK - 1; k++) {
-            this->getElem(i, _sizeJ - 1, k) = upJ[(i - 1) * (_sizeK - 2) + (k - 1)];
+            getElem(i, _sizeJ - 1, k) = upJ[(i - 1) * (_sizeK - 2) + (k - 1)];
         }
     }
 }
@@ -158,7 +174,7 @@ void Block::setUpJ(const std::vector<double>& upJ) {
 void Block::setDownK(const std::vector<double>& downK) {
     for (int i = 1; i < _sizeI - 1; i++) {
         for (int j = 1; j < _sizeJ - 1; j++) {
-            this->getElem(i, j, 0) = downK[(i - 1) * (_sizeJ - 2) + (j - 1)];
+            getElem(i, j, 0) = downK[(i - 1) * (_sizeJ - 2) + (j - 1)];
         }
     }
 }
@@ -166,7 +182,7 @@ void Block::setDownK(const std::vector<double>& downK) {
 void Block::setUpK(const std::vector<double>& upK) {
     for (int i = 1; i < _sizeI - 1; i++) {
         for (int j = 1; j < _sizeJ - 1; j++) {
-            this->getElem(i, j, _sizeK - 1) = upK[(i - 1) * (_sizeJ - 2) + (j - 1)];
+            getElem(i, j, _sizeK - 1) = upK[(i - 1) * (_sizeJ - 2) + (j - 1)];
         }
     }
 }

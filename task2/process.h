@@ -26,23 +26,27 @@ class Process {
     int _bmin_k;
 
     MPI_Request _request;
+    MPI_Request _downI;
+    MPI_Request _upI;
+    MPI_Request _downJ;
+    MPI_Request _upJ;
+    MPI_Request _downK;
+    MPI_Request _upK;
     MPI_Status _status;
 
 public:  
-    Process(int countI, int countJ, int countK, int N, MPI_Request &request, MPI_Status &status);
+    Process(int countI, int countJ, int countK, int N);
 
     void printError(const Block& b, Function3D &u, double t);
 
     void update(Block &b);
-    void sendNeighbors(const Block &b);
-    void recvNeighbors(Block &b);
 
-    void sendDownI(std::vector<double> downI);
-    void sendUpI(std::vector<double> upI);
-    void sendDownJ(std::vector<double> downJ);
-    void sendUpJ(std::vector<double> upJ);
-    void sendDownK(std::vector<double> downK);
-    void sendUpK(std::vector<double> upK);
+    void sendDownI(std::vector<double> &downI);
+    void sendUpI(std::vector<double> &upI);
+    void sendDownJ(std::vector<double> &downJ);
+    void sendUpJ(std::vector<double> &upJ);
+    void sendDownK(std::vector<double> &downK);
+    void sendUpK(std::vector<double> &upK);
 
     std::vector<double> recvDownI();
     std::vector<double> recvUpI();

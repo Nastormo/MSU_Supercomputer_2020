@@ -26,6 +26,8 @@ public:
         double shiftX, double shiftY, double shiftZ);
 
     void printBlock() const;
+    void printDiff(Function3D &u, double t) const;
+    
     double getError(Function3D &u, double t) const;
 
     int getSizeI() { return _sizeI; }

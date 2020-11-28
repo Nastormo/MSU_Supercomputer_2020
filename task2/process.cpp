@@ -1,15 +1,13 @@
 #include "process.h"
 
-Process::Process(int countI, int countJ, int countK, int N, MPI_Request &request, MPI_Status &status) 
+Process::Process(int countI, int countJ, int countK, int N) 
         : _countI(countI),
         _countJ(countJ),
-        _countK(countK),
-        _request(request),
-        _status(status) {
+        _countK(countK) {
     MPI_Comm_rank(MPI_COMM_WORLD, &_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &_p_count);
 
-    _curI = _rank / (_countJ * _countK);;
+    _curI = _rank / (_countJ * _countK);
     _curJ = (_rank - (_countJ * _countK) * _curI) / _countK;
     _curK = _rank % _countK;
 
@@ -33,80 +31,96 @@ void Process::printError(const Block& b, Function3D &u, double t) {
         }
         printf("t: %lf Error: %lf\n", t, error);
     } else {
-        //printf("Other t: %lf Error: %lf\n", t, error);
         MPI_Isend(&error, 1, MPI_DOUBLE, 
             0, 1, MPI_COMM_WORLD, &_request);
     }
 }
 
 void Process::update(Block &b) {
-    sendNeighbors(b);
-    recvNeighbors(b);
+    std::vector<double> downI = b.getDownI();
+    std::vector<double> upI = b.getUpI();
+    std::vector<double> downJ = b.getDownJ();
+    std::vector<double> upJ = b.getUpJ();
+    std::vector<double> downK = b.getDownK();
+    std::vector<double> upK = b.getUpK();
+
+    sendDownI(downI);
+    std::vector<double> rupI = recvUpI();
+    b.setUpI(rupI);
+
+    // printf("RecvUpI:%d\n",getOtherRank(_curI + 1, _curJ, _curK));
+    // for(int i = 0; i < upI.size(); i++) {
+    //     printf("%lf ", upI[i]);
+    // }
+    // printf("\n");
+
+    sendUpI(upI);
+    std::vector<double> rdownI = recvDownI();
+    b.setDownI(rdownI);
+
+    sendDownJ(downJ);
+    std::vector<double> rupJ = recvUpJ();
+    b.setUpJ(rupJ);
+
+    sendUpJ(upJ);
+    std::vector<double> rdownJ = recvDownJ();
+    b.setDownJ(rdownJ);
+
+    sendDownK(downK);
+    std::vector<double> rupK = recvUpK();
+    b.setUpK(rupK);
+
+    sendUpK(upK);
+    std::vector<double> rdownK = recvDownK();
+    b.setDownK(rdownK);
+    MPI_Barrier(MPI_COMM_WORLD);
 }
 
-void Process::sendNeighbors(const Block &b) {
-    sendDownI(b.getDownI());
-    sendUpI(b.getUpI());
-    sendDownJ(b.getDownJ());
-    sendUpJ(b.getUpJ());
-    sendDownK(b.getDownK());
-    sendUpK(b.getUpK());
-}
-
-void Process::recvNeighbors(Block &b) {
-    b.setDownI(recvDownI());
-    b.setUpI(recvUpI());
-    b.setDownJ(recvDownJ());
-    b.setUpJ(recvUpJ());
-    b.setDownK(recvDownK());
-    b.setUpK(recvUpK());
-}
-
-void Process::sendDownI(std::vector<double> downI) {
+void Process::sendDownI(std::vector<double>& downI) {
     if (_curI > 0) {
         MPI_Isend(downI.data(), downI.size(), MPI_DOUBLE, 
             getOtherRank(_curI - 1, _curJ, _curK), 
-            0, MPI_COMM_WORLD, &_request);
+            0, MPI_COMM_WORLD, &_downI);
     }
 }
 
-void Process::sendUpI(std::vector<double> upI) {
+void Process::sendUpI(std::vector<double>& upI) {
     if (_curI + 1 < _countI) {
         MPI_Isend(upI.data(), upI.size(), MPI_DOUBLE, 
             getOtherRank(_curI + 1, _curJ, _curK), 
-            0, MPI_COMM_WORLD, &_request);
+            0, MPI_COMM_WORLD, &_upI);
     }
 }
 
-void Process::sendDownJ(std::vector<double> downJ) {
+void Process::sendDownJ(std::vector<double>& downJ) {
     if (_curJ > 0) {
         MPI_Isend(downJ.data(), downJ.size(), MPI_DOUBLE, 
             getOtherRank(_curI, _curJ - 1, _curK), 
-            0, MPI_COMM_WORLD, &_request);
+            0, MPI_COMM_WORLD, &_downJ);
     }
 }
 
-void Process::sendUpJ(std::vector<double> upJ) {
+void Process::sendUpJ(std::vector<double>& upJ) {
     if (_curJ + 1 < _countJ) {
         MPI_Isend(upJ.data(), upJ.size(), MPI_DOUBLE, 
             getOtherRank(_curI, _curJ + 1, _curK), 
-            0, MPI_COMM_WORLD, &_request);
+            0, MPI_COMM_WORLD, &_upJ);
     }
 }
 
-void Process::sendDownK(std::vector<double> downK) {
+void Process::sendDownK(std::vector<double>& downK) {
     if (_curK > 0) {
         MPI_Isend(downK.data(), downK.size(), MPI_DOUBLE, 
             getOtherRank(_curI, _curJ, _curK - 1), 
-            0, MPI_COMM_WORLD, &_request);
+            0, MPI_COMM_WORLD, &_downK);
     }
 }
 
-void Process::sendUpK(std::vector<double> upK) {
+void Process::sendUpK(std::vector<double>& upK) {
     if (_curK + 1 < _countK) {
         MPI_Isend(upK.data(), upK.size(), MPI_DOUBLE, 
             getOtherRank(_curI, _curJ, _curK + 1), 
-            0, MPI_COMM_WORLD, &_request);
+            0, MPI_COMM_WORLD, &_upK);
     }
 }
 
