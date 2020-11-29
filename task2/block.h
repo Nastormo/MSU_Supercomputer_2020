@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <algorithm>
 #include <cmath>
+#include <string>
+#include <fstream>
 
 #include "function.h"
 
@@ -29,6 +31,7 @@ public:
 
     void printBlock() const;
     void printDiff(Function3D &u, double t) const;
+    void saveBlock(std::string &str) const;
     
     double getError(Function3D &u, double t) const;
 

@@ -26,6 +26,11 @@ void Block::printBlock() const {
     printf("\n");
 }
 
+void Block::saveBlock(std::string &str) const {
+    std::ofstream outFile(str.c_str(), std::ios::out | std::ios::binary);
+    outFile.write((char *)_raw.data(), _raw.size() * sizeof(double));
+}
+
 void Block::printDiff(Function3D& u, double t) const {
     printf("Size: %d %d %d\n", _sizeI, _sizeJ, _sizeK);
     for (int i = 1; i < _sizeI - 1; i++) {
@@ -44,7 +49,7 @@ void Block::printDiff(Function3D& u, double t) const {
 
 double Block::getError(Function3D& u, double t) const {
     double error = 0;
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i = 1; i < _sizeI - 1; i++) {
         for (int j = 1; j < _sizeJ - 1; j++) {
             for (int k = 1; k < _sizeK - 1; k++) {

@@ -11,20 +11,24 @@ Process::Process(int countI, int countJ, int countK, int N, int argc, char** arg
     MPI_Comm_size(MPI_COMM_WORLD, &_p_count);
 
     if (_rank == 0) {
-        printf("Process count: %d\nNodes count: %d\nBorder: %lf\n", _p_count, N - 1, Lx);
+        printf("Process count: %d\nNodes count: %d\nBorder: %lf\n", _p_count, N, Lx);
     }
 
     _curI = _rank / (_countJ * _countK);
     _curJ = (_rank - (_countJ * _countK) * _curI) / _countK;
     _curK = _rank % _countK;
 
-    _bsize_I = (N - 1) / _countI;
-    _bsize_J = (N - 1) / _countJ;
-    _bsize_K = (N - 1) / _countK;
+    int blockSizeI = (N + _countI - 1)/ _countI;
+    int blockSizeJ = (N + _countJ - 1)/ _countJ;
+    int blockSizeK = (N + _countK - 1)/ _countK;
 
-    _bmin_i = _bsize_I * _curI;
-    _bmin_j = _bsize_J * _curJ;
-    _bmin_k = _bsize_K * _curK;
+    _bsize_I = std::min(N, blockSizeI * (_curI + 1)) - blockSizeI * _curI;
+    _bsize_J = std::min(N, blockSizeJ * (_curJ + 1)) - blockSizeJ * _curJ;
+    _bsize_K = std::min(N, blockSizeK * (_curK + 1)) - blockSizeK * _curK;
+
+    _bmin_i = blockSizeI * _curI;
+    _bmin_j = blockSizeJ * _curJ;
+    _bmin_k = blockSizeK * _curK;
 
     _startTime = MPI_Wtime();
 }
