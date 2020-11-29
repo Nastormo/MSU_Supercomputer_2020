@@ -49,11 +49,14 @@ void Block::printDiff(Function3D& u, double t) const {
 
 double Block::getError(Function3D& u, double t) const {
     double error = 0;
-    //#pragma omp parallel for
+    #pragma omp parallel for
     for (int i = 1; i < _sizeI - 1; i++) {
         for (int j = 1; j < _sizeJ - 1; j++) {
             for (int k = 1; k < _sizeK - 1; k++) {
+                // #pragma omp critical 
+                // { 
                 error = std::max(std::abs(getValElem(i, j, k) -  u(getX(i), getY(j), getZ(k), t)), error);
+                //}
             }
         }
     }
