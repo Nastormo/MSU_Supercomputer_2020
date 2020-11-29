@@ -1,11 +1,18 @@
 #include "process.h"
 
-Process::Process(int countI, int countJ, int countK, int N) 
+Process::Process(int countI, int countJ, int countK, int N, int argc, char** argv) 
         : _countI(countI),
         _countJ(countJ),
         _countK(countK) {
+    double Lx = atof(argv[1]);
+
+    MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &_p_count);
+
+    if (_rank == 0) {
+        printf("Process count: %d\nNodes count: %d\nBorder: %lf\n", _p_count, N - 1, Lx);
+    }
 
     _curI = _rank / (_countJ * _countK);
     _curJ = (_rank - (_countJ * _countK) * _curI) / _countK;
@@ -26,6 +33,7 @@ Process::~Process() {
     if(_rank == 0) {
         printf("Elapsed time = %lf\n", MPI_Wtime() - _startTime);
     }
+    MPI_Finalize();
 }
 
 void Process::printError(const Block& b, Function3D &u, double t) {

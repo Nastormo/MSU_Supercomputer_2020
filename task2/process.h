@@ -37,7 +37,7 @@ class Process {
     MPI_Status _status;
 
 public:  
-    Process(int countI, int countJ, int countK, int N);
+    Process(int countI, int countJ, int countK, int N, int argc, char** argv);
     ~Process();
 
     void printError(const Block& b, Function3D &u, double t);

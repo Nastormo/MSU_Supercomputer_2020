@@ -72,9 +72,7 @@ int main(int argc, char** argv) {
     MPI_Request request;
     MPI_Status status;
 
-    MPI_Init(&argc, &argv);
-
-    Process p(bCountI, bCountJ, bCountK, N);
+    Process p(bCountI, bCountJ, bCountK, N, argc, argv);
 
     std::vector<Block> massB (3,
         Block(
@@ -96,6 +94,6 @@ int main(int argc, char** argv) {
         p.printError(massB[t % 3], u_a, tau * t);
         p.update(massB[t % 3]);
     }
-    MPI_Finalize();
+    
     return 0; 
 }
