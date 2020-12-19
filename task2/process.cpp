@@ -49,6 +49,7 @@ void Process::printError(const Block& b, Function3D &u, double t) {
                 i, 1, MPI_COMM_WORLD, &_status);
             error = std::max(otherError, error);
         }
+        std::cout << t << " " << error << std::endl;
         printf("t: %lf Error: %lf\n", t, error);
     } else {
         MPI_Isend(&error, 1, MPI_DOUBLE, 

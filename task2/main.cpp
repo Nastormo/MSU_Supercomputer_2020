@@ -28,6 +28,8 @@ void saveMatrix(Block &b, Function3D &u, Process &p, double t, int N) {
     std::stringstream path;
     path << "matrix/" << N;
     mkdir(path.str().c_str(), 0777);
+    path << "/" << p.getPCount();
+    mkdir(path.str().c_str(), 0777);
     path << "/" << p.getI() << p.getJ() << p.getK();
     mkdir(path.str().c_str(), 0777);
     std::stringstream name;
@@ -124,13 +126,13 @@ int main(int argc, char** argv) {
     init_u1(massB[1], massB[0], tau, u_a);
     p.printError(massB[1], u_a, tau);
     p.update(massB[1]);
-    //saveMatrix(massB[1], u_a, p, tau, N);
+    saveMatrix(massB[1], u_a, p, tau, N);
 
     for (int t = 2; t < K; t++) {
         step(massB[t % 3], massB[(t + 2) % 3], massB[(t + 1) % 3], tau, u_a);
         p.printError(massB[t % 3], u_a, tau * t);
         p.update(massB[t % 3]);
-        //saveMatrix(massB[t % 3], u_a, p, tau * t, N);
+        saveMatrix(massB[t % 3], u_a, p, tau * t, N);
     }
     
     return 0; 

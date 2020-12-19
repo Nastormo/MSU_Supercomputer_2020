@@ -1,6 +1,7 @@
 #pragma once
 #include <mpi.h>
 #include <vector>
+#include <iostream>
 
 #include "block.h"
 #include "function.h"
@@ -59,6 +60,7 @@ public:
     std::vector<double> recvUpK();
 
     int getRank() { return _rank; }
+    int getPCount() { return _p_count; } 
     int getOtherRank(int i, int j, int k) { return i * (_countJ * _countK) + j * _countK + k; }
 
     int getI() { return _curI; }
