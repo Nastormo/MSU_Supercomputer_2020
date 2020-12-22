@@ -12,19 +12,10 @@ class Process {
     int _rank;
     int _p_count;
 
-    int _ndims[3];
-
-    int _curI;
-    int _curJ;
-    int _curK;
-
-    int _bsize_I;
-    int _bsize_J;
-    int _bsize_K;
-
-    int _bmin_i;
-    int _bmin_j;
-    int _bmin_k;
+    std::vector<int> _ndims;
+    std::vector<int> _position;
+    std::vector<int> _bsize;
+    std::vector<int> _bmin;
 
     double _startTime;
 
@@ -45,33 +36,25 @@ public:
 
     void update(Block &b);
 
-    void sendDownI(std::vector<double> &downI);
-    void sendUpI(std::vector<double> &upI);
-    void sendDownJ(std::vector<double> &downJ);
-    void sendUpJ(std::vector<double> &upJ);
-    void sendDownK(std::vector<double> &downK);
-    void sendUpK(std::vector<double> &upK);
-
-    std::vector<double> recvDownI();
-    std::vector<double> recvUpI();
-    std::vector<double> recvDownJ();
-    std::vector<double> recvUpJ();
-    std::vector<double> recvDownK();
-    std::vector<double> recvUpK();
+    void Send(std::vector<double>& slice, int axis, int shift);
+    std::vector<double> Recv(int axis, int shift);
 
     int getRank() { return _rank; }
     int getPCount() { return _p_count; } 
     int getOtherRank(int i, int j, int k) { return i * (_ndims[1] * _ndims[2]) + j * _ndims[2] + k; }
+    int getOtherRank(const std::vector<int> &position);
 
-    int getI() { return _curI; }
-    int getJ() { return _curJ; }
-    int getK() { return _curK; }
+    int getI() { return _position[0]; }
+    int getJ() { return _position[1]; }
+    int getK() { return _position[2]; }
 
-    int getSizeX() { return _bsize_I; }
-    int getSizeY() { return _bsize_J; }
-    int getSizeZ() { return _bsize_K; }
+    std::vector<int> getSize() { return _bsize; }
+    int getSizeX() { return _bsize[0]; }
+    int getSizeY() { return _bsize[1]; }
+    int getSizeZ() { return _bsize[2]; }
 
-    int get_i() { return _bmin_i; }
-    int get_j() { return _bmin_j; }
-    int get_k() { return _bmin_k; }
+    std::vector<int> getMin() { return _bmin; }
+    int get_i() { return _bmin[0]; }
+    int get_j() { return _bmin[1]; }
+    int get_k() { return _bmin[2]; }
 };

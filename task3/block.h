@@ -12,22 +12,13 @@
 class Block {
     std::vector<double> _raw;
 
-    double _shiftX;
-    double _shiftY;
-    double _shiftZ;
-
-    int _sizeI;
-    int _sizeJ;
-    int _sizeK;
-
-    int _minI;
-    int _minJ;
-    int _minK;
+    std::vector<double> _shift;
+    std::vector<int> _size;
+    std::vector<int> _min;
 
 public:
-    Block(int sizeI, int sizeJ, int sizeK, 
-        int minI, int minJ, int minK, 
-        double shiftX, double shiftY, double shiftZ);
+    Block(std::vector<int>& size, std::vector<int>& min, 
+        std::vector<double>& shift);
 
     void printBlock() const;
     void printDiff(Function3D &u, double t) const;
@@ -35,17 +26,18 @@ public:
     
     double getError(Function3D &u, double t) const;
 
-    int getSizeI() { return _sizeI; }
-    int getSizeJ() { return _sizeJ; }
-    int getSizeK() { return _sizeK; }
+    std::vector<int> getSize() { return _size; }
+    int getSizeI() { return _size[0]; }
+    int getSizeJ() { return _size[1]; }
+    int getSizeK() { return _size[2]; }
 
-    int getMinI() { return _minI; }
-    int getMinJ() { return _minJ; }
-    int getMinK() { return _minK; }
+    int getMinI() { return _min[0]; }
+    int getMinJ() { return _min[1]; }
+    int getMinK() { return _min[2]; }
 
-    double getX(int i) const { return (i + _minI) * _shiftX; }
-    double getY(int j) const { return (j + _minJ) * _shiftY; }
-    double getZ(int k) const { return (k + _minK) * _shiftZ; }
+    double getX(int i) const { return (i + _min[0]) * _shift[0]; }
+    double getY(int j) const { return (j + _min[1]) * _shift[1]; }
+    double getZ(int k) const { return (k + _min[2]) * _shift[2]; }
 
     double &operator()(int i, int j, int k);
     double operator()(int i, int j, int k) const;
@@ -53,19 +45,8 @@ public:
     double& getElem(int i, int j, int k);
     double getValElem(int i, int j, int k) const;
 
-    std::vector<double> getDownI() const;
-    std::vector<double> getUpI() const;
-    std::vector<double> getDownJ() const;
-    std::vector<double> getUpJ() const;
-    std::vector<double> getDownK() const;
-    std::vector<double> getUpK() const;
-
-    void setDownI(const std::vector<double>& downI);
-    void setUpI(const std::vector<double>& upI);
-    void setDownJ(const std::vector<double>& downJ);
-    void setUpJ(const std::vector<double>& upJ);
-    void setDownK(const std::vector<double>& downK);
-    void setUpK(const std::vector<double>& upK);
+    std::vector<double> getSlice(int axis, int item) const;
+    void setSlice(const std::vector<double>& slice, int axis, int item);
 
     double lap_h(int i, int j, int k) const;
 };
