@@ -3,7 +3,7 @@
 #include <iostream>
 
 
-#include <cuda_runtime.h>
+//#include <cuda_runtime.h>
 
 #include "config.h"
 
@@ -37,17 +37,17 @@ void Config::printConfig() {
     std::cout <<  "C++:" << std::endl;
     std::cout << "\tStandart:" << __cplusplus << std::endl;
     
-    std::cout << "Cuda:" << std::endl;
-    cudaDeviceProp devProp;
-    cudaGetDeviceProperties ( &devProp, 0 );
-    std::cout << "\tCompute capability     : " << devProp.major << "." << devProp.minor << std::endl;
-    std::cout << "\tName                   : " << devProp.name << std::endl;
-    std::cout << "\tTotal Global Memory    : " << devProp.totalGlobalMem << std::endl;
-    std::cout << "\tShared memory per block: " << devProp.sharedMemPerBlock << std::endl;
-    std::cout << "\tRegisters per block    : " << devProp.regsPerBlock << std::endl;
-    std::cout << "\tWarp size              : " << devProp.warpSize << std::endl;
-    std::cout << "\tMax threads per block  : " << devProp.maxThreadsPerBlock << std::endl;
-    std::cout << "\tTotal constant memory  : " << devProp.totalConstMem << std::endl;
+    // std::cout << "Cuda:" << std::endl;
+    // cudaDeviceProp devProp;
+    // cudaGetDeviceProperties ( &devProp, 0 );
+    // std::cout << "\tCompute capability     : " << devProp.major << "." << devProp.minor << std::endl;
+    // std::cout << "\tName                   : " << devProp.name << std::endl;
+    // std::cout << "\tTotal Global Memory    : " << devProp.totalGlobalMem << std::endl;
+    // std::cout << "\tShared memory per block: " << devProp.sharedMemPerBlock << std::endl;
+    // std::cout << "\tRegisters per block    : " << devProp.regsPerBlock << std::endl;
+    // std::cout << "\tWarp size              : " << devProp.warpSize << std::endl;
+    // std::cout << "\tMax threads per block  : " << devProp.maxThreadsPerBlock << std::endl;
+    // std::cout << "\tTotal constant memory  : " << devProp.totalConstMem << std::endl;
 
     std::cout << "Config:" << std::endl;
     std::cout << "\tLx: " << _Lx << std::endl;

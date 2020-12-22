@@ -35,6 +35,10 @@ public:
     int getMinJ() { return _min[1]; }
     int getMinK() { return _min[2]; }
 
+    double getShiftX() { return _shift[0]; }
+    double getShiftY() { return _shift[1]; }
+    double getShiftZ() { return _shift[2]; }
+
     double getX(int i) const { return (i + _min[0]) * _shift[0]; }
     double getY(int j) const { return (j + _min[1]) * _shift[1]; }
     double getZ(int k) const { return (k + _min[2]) * _shift[2]; }

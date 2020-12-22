@@ -12,8 +12,7 @@
 #include "config.h"
 #include "function.h"
 #include "process.h"
-#include "omp.h"
-#include "cuda.hpp"
+#include "parallel.hpp"
 
 // void saveMatrix(Block &b, Function3D &u, Process &p, double t, int N) {
 //     int sizeI = b.getSizeI();
@@ -53,43 +52,40 @@
 int main(int argc, char** argv) {
     Config conf(argc, argv);
 
-    test();
-    return 0;
+    Function3D u_a(conf.getLx(), conf.getLy(), conf.getLz());
+    Process p(conf);
 
-    // Function3D u_a(conf.getLx(), conf.getLy(), conf.getLz());
-    // Process p(conf);
+    double Lx = conf.getLx();
+    double Ly = conf.getLy();
+    double Lz = conf.getLz();
+    double tau = conf.getTau();
+    int K = conf.getK();
+    int N = conf.getN();
+    std::vector<int> bsize = p.getSize();
+    std::vector<int> bmin = p.getMin();
+    std::vector<double> bshift = { Lx/(N + 1), Ly/(N + 1), Lz/(N + 1) };
 
-    // double Lx = conf.getLx();
-    // double Ly = conf.getLy();
-    // double Lz = conf.getLz();
-    // double tau = conf.getTau();
-    // int K = conf.getK();
-    // int N = conf.getN();
-    // std::vector<int> bsize = p.getSize();
-    // std::vector<int> bmin = p.getMin();
-    // std::vector<double> bshift = { Lx/(N + 1), Ly/(N + 1), Lz/(N + 1) };
+    std::vector<Block> massB (3,
+        Block(bsize, bmin, bshift)
+    );
 
-    // std::vector<Block> massB (3,
-    //     Block(bsize, bmin, bshift)
-    // );
-
-    // init_u0(massB[0], u_a);
-    // p.printError(massB[0], u_a, 0.0);
-    // p.update(massB[0]);
-    // //saveMatrix(massB[0], u_a, p, 0, N);
+    init_u0(massB[0], u_a);
+    p.printError(massB[0], u_a, 0.0);
+    p.update(massB[0]);
+    //saveMatrix(massB[0], u_a, p, 0, N);
     
-    // init_u1(massB[1], massB[0], tau, u_a);
-    // p.printError(massB[1], u_a, tau);
-    // p.update(massB[1]);
-    // // saveMatrix(massB[1], u_a, p, tau, N);
+    init_u1(massB[1], massB[0], tau, u_a);
+    p.printError(massB[1], u_a, tau);
+    p.update(massB[1]);
+    // saveMatrix(massB[1], u_a, p, tau, N);
 
-    // std::cout << K << std::endl;
-    // for (int t = 2; t < K; t++) {
-    //     step(massB[t % 3], massB[(t + 2) % 3], massB[(t + 1) % 3], tau, u_a);
-    //     p.printError(massB[t % 3], u_a, tau * t);
-    //     p.update(massB[t % 3]);
-    //     // saveMatrix(massB[t % 3], u_a, p, tau * t, N);
-    // }
+    std::cout << K << std::endl;
+    for (int t = 2; t < K; t++) {
+        step(massB[t % 3], massB[(t + 2) % 3], massB[(t + 1) % 3], tau, u_a);
+        p.printError(massB[t % 3], u_a, tau * t);
+        p.update(massB[t % 3]);
+        // saveMatrix(massB[t % 3], u_a, p, tau * t, N);
+    }
     
-    // return 0; 
+    return 0; 
 }

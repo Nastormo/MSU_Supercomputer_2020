@@ -1,6 +1,10 @@
-#include "omp.h"
+#include "parallel.hpp"
 
-void Omp::init_u0(Block &b, Function3D &u) {
+void test() {
+    return;
+}
+
+void init_u0(Block &b, Function3D &u) {
     int sizeI = b.getSizeI();
     int sizeJ = b.getSizeJ();
     int sizeK = b.getSizeK();
@@ -15,7 +19,7 @@ void Omp::init_u0(Block &b, Function3D &u) {
     }
 }
 
-void Omp::init_u1(Block &b, const Block &u0, double tau, Function3D &u) {
+void init_u1(Block &b, const Block &u0, double tau, Function3D &u) {
     int sizeI = b.getSizeI();
     int sizeJ = b.getSizeJ();
     int sizeK = b.getSizeK();
@@ -30,7 +34,7 @@ void Omp::init_u1(Block &b, const Block &u0, double tau, Function3D &u) {
     } 
 }
 
-void Omp::step(Block &u2, const Block& u1, const Block& u0, double tau, Function3D &u) {
+void step(Block &u2, const Block& u1, const Block& u0, double tau, Function3D &u) {
     int sizeI = u2.getSizeI();
     int sizeJ = u2.getSizeJ();
     int sizeK = u2.getSizeK();
