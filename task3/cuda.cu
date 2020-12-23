@@ -167,7 +167,7 @@ void u1(double* block, double* u0, double tau) {
     int j = blockIdx.y + 1;
     int k = threadIdx.x + 1;
     block[i * (sizeJ * sizeK) + j * (sizeK) + k] = u0[i * (sizeJ * sizeK) + j * (sizeK) + k] + 
-        (pow(tau, 2) / 2) * lap_h(block, i, j, k);
+        (pow(tau, 2) / 2) * lap_h(u0, i, j, k);
 }
 
 void init_u1(Block &b, const Block &u0, double tau, Function3D &u) {
