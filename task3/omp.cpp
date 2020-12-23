@@ -44,3 +44,21 @@ void step(Block &b, const Block& u1, const Block& u0, double tau, Function3D &u)
         }
     }
 }
+
+double getError(const Block &b, Function3D &u, double t) {
+    int sizeI = b.getSizeI();
+    int sizeJ = b.getSizeJ();
+    int sizeK = b.getSizeK();
+
+    double error = 0;
+    #pragma omp parallel for
+    for (int i = 1; i < sizeI - 1; i++) {
+        for (int j = 1; j < sizeJ - 1; j++) {
+            for (int k = 1; k < sizeK - 1; k++) {
+                error = std::max(std::abs(b.getValElem(i, j, k) -  
+                    u(b.getX(i), b.getY(j), b.getZ(k), t)), error);
+            }
+        }
+    }
+    return error;
+}

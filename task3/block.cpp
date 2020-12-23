@@ -92,7 +92,6 @@ std::vector<double> Block::getSlice(int axis, int item) const {
 
     std::vector<double> slice;
 
-    #pragma omp parallel for
     for (int i = i_min[0]; i < i_max[0]; i++) {
         for (int j = i_min[1]; j < i_max[1]; j++) {
             for (int k = i_min[2]; k < i_max[2]; k++) {
@@ -112,7 +111,6 @@ void Block::setSlice(const std::vector<double>& slice, int axis, int item) {
     i_max[axis] = item + 1;
 
     int ind = 0;
-    //#pragma omp parallel for
     for (int i = i_min[0]; i < i_max[0]; i++) {
         for (int j = i_min[1]; j < i_max[1]; j++) {
             for (int k = i_min[2]; k < i_max[2]; k++) {

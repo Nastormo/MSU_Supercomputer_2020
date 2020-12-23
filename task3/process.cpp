@@ -1,4 +1,5 @@
 #include "process.h"
+#include "parallel.hpp"
 
 Process::Process(Config conf)
 {
@@ -44,7 +45,7 @@ Process::~Process() {
 }
 
 void Process::printError(const Block& b, Function3D &u, double t) {
-    double error = b.getError(u, t);
+    double error = getError(b, u, t);
     if (_rank == 0) {
         double otherError;
         for (int i = 1; i < _p_count; i++) {

@@ -30,17 +30,17 @@ public:
     std::vector<double> getValData() const { return _raw; }
 
     std::vector<int> getSize() { return _size; }
-    int getSizeI() { return _size[0]; }
-    int getSizeJ() { return _size[1]; }
-    int getSizeK() { return _size[2]; }
+    int getSizeI() const { return _size[0]; }
+    int getSizeJ() const { return _size[1]; }
+    int getSizeK() const { return _size[2]; }
 
-    int getMinI() { return _min[0]; }
-    int getMinJ() { return _min[1]; }
-    int getMinK() { return _min[2]; }
+    int getMinI() const { return _min[0]; }
+    int getMinJ() const { return _min[1]; }
+    int getMinK() const { return _min[2]; }
 
-    double getShiftX() { return _shift[0]; }
-    double getShiftY() { return _shift[1]; }
-    double getShiftZ() { return _shift[2]; }
+    double getShiftX() const { return _shift[0]; }
+    double getShiftY() const { return _shift[1]; }
+    double getShiftZ() const { return _shift[2]; }
 
     double getX(int i) const { return (i + _min[0]) * _shift[0]; }
     double getY(int j) const { return (j + _min[1]) * _shift[1]; }
