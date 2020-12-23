@@ -79,7 +79,6 @@ int main(int argc, char** argv) {
     p.update(massB[1]);
     // saveMatrix(massB[1], u_a, p, tau, N);
 
-    std::cout << K << std::endl;
     for (int t = 2; t < K; t++) {
         step(massB[t % 3], massB[(t + 2) % 3], massB[(t + 1) % 3], tau, u_a);
         p.printError(massB[t % 3], u_a, tau * t);

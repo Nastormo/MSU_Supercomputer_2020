@@ -6,15 +6,26 @@
 
 #include <cuda.h>
 
-#define checkCudaErrors(val) check( (val), #val, __FILE__, __LINE__)
+#define SAFE_CALL( CallInstruction ) { \
+    cudaError_t cuerr = CallInstruction; \
+    if(cuerr != cudaSuccess) { \
+        printf("CUDA error: %s at call \"" #CallInstruction "\"\n", cudaGetErrorString(cuerr)); \
+            throw "error in CUDA API function, aborting..."; \
+    } \
+}
 
-template<typename T>
-void check(T err, const char* const func, const char* const file, const int line) {
-  if (err != cudaSuccess) {
-    std::cerr << "CUDA error at: " << file << ":" << line << std::endl;
-    std::cerr << cudaGetErrorString(err) << " " << func << std::endl;
-    exit(1);
-  }
+#define SAFE_KERNEL_CALL( KernelCallInstruction ) { \
+    KernelCallInstruction; \
+    cudaError_t cuerr = cudaGetLastError(); \
+    if(cuerr != cudaSuccess) { \
+        printf("CUDA error in kernel launch: %s at kernel \"" #KernelCallInstruction "\"\n", cudaGetErrorString(cuerr)); \
+            throw "error in CUDA kernel launch, aborting..."; \
+    } \
+    cuerr = cudaDeviceSynchronize(); \
+    if(cuerr != cudaSuccess) { \
+        printf("CUDA error in kernel execution: %s at kernel \"" #KernelCallInstruction "\"\n", cudaGetErrorString(cuerr)); \
+            throw "error in CUDA kernel execution, aborting..."; \
+    } \
 }
 
 __global__ 
@@ -30,9 +41,9 @@ void test() {
 
     int* devVec;
 
-    checkCudaErrors(cudaMalloc((void**)&devVec, sizeof(int) * size));
+    SAFE_CALL(cudaMalloc((void**)&devVec, sizeof(int) * size));
 
-    cudaMemcpy(devVec, vec.data(), sizeof(int) * size, cudaMemcpyHostToDevice);
+    SAFE_CALL(cudaMemcpy(devVec, vec.data(), sizeof(int) * size, cudaMemcpyHostToDevice));
 
     dim3 gridSize = dim3(1, 1, 1);
     dim3 blockSize = dim3(size, 1, 1);
@@ -49,62 +60,68 @@ void test() {
 }
 
 __device__
-double u(double Lx, double Ly, double Lz, double x, double y, double z) {
+double u(double Lx, double Ly, double Lz, double a, double x, double y, double z, double t) {
     return sin((M_PI / Lx) * x) * 
         sin((M_PI / Ly) * y) * 
-        sin((M_PI / Lz) * z);
+        sin((M_PI / Lz) * z) *
+        cos(a * t);;
 }
 
 __global__
-void u0(double* block, double Lx, double Ly, double Lz, 
-    int minI, int minJ, int minK, 
-    double shiftX, double shiftY, double shiftZ) 
+void u0(double* block, 
+    double Lx, double Ly, double Lz, double a,
+    double shiftX, double shiftY, double shiftZ,
+    int sizeI, int sizeJ, int sizeK,
+    int minI, int minJ, int minK)
 {
-    
+    int i = blockIdx.z + 1;
+    int j = blockIdx.y + 1;
+    int k = threadIdx.x + 1;
+    block[i * (sizeJ * sizeK) + j * (sizeK) + k] = u(Lx, Lz, Lz, a,
+        (i + minI) * shiftX, (j + minJ) * shiftY, (k + minK) * shiftZ, 0.0f);
 }
 
 void init_u0(Block &b, Function3D &u) {
+    double Lx = u.getLx();
+    double Ly = u.getLy();
+    double Lz = u.getLz();
+    double a = u.a_t();
+
+    double shiftX = b.getShiftX();
+    double shiftY = b.getShiftY();
+    double shiftZ = b.getShiftZ();
+
     int sizeI = b.getSizeI();
     int sizeJ = b.getSizeJ();
     int sizeK = b.getSizeK();
+
+    int minI = b.getMinI();
+    int minJ = b.getMinJ();
+    int minK = b.getMinK();
+
+    int size = sizeI * sizeJ * sizeK;
 
     int sizeBI = 1;
     int sizeBJ = 1;
     int sizeBK = sizeK - 2;
 
-    checkCudaErrors(cudaMalloc((void**)&devVec, sizeof(double) * size));
+    double* d_block;
 
-    cudaMemcpy(devVec, vec.data(), sizeof(int) * size, cudaMemcpyHostToDevice);
+    SAFE_CALL(cudaMalloc((void**)&d_block, sizeof(double) * size));
 
-    dim3 grid = dim3(sizeI / sizeBI, sizeJ / sizeBJ, sizeK / sizeBK);
-    dim3 block = dim3(sizeBI, sizeBJ, sizeBK);
-    
-    std::cout << grid.x << grid.y << grid.z << std::endl;
-    std::cout << block.x << block.y << block.z << std::endl;
+    dim3 grid = dim3((sizeK - 2) / sizeBK, (sizeJ - 2) / sizeBJ, (sizeI - 2) / sizeBI);
+    dim3 block = dim3(sizeBK, sizeBJ, sizeBI);
 
-    cuda_test<<<gridSize, blockSize>>>(devVec);
+    std::cout << grid.x << ' ' << grid.y << ' ' << grid.z << std::endl;
+    std::cout << block.x << ' ' << block.y << ' ' << block.z << std::endl;
 
-    cudaEvent_t syncEvent;
+    u0<<<grid, block>>>(d_block, 
+        Lx, Ly, Lz, a,
+        shiftX, shiftY, shiftZ, 
+        sizeI, sizeJ, sizeK, 
+        minI, minJ, minK);
 
-    cudaEventCreate(&syncEvent);
-    cudaEventRecord(syncEvent, 0);
-    cudaEventSynchronize(syncEvent);
-    cudaMemcpy(vec.data(), devVec, sizeof(int) * size, cudaMemcpyDeviceToHost);
-
-
-
-    int sizeI = b.getSizeI();
-    int sizeJ = b.getSizeJ();
-    int sizeK = b.getSizeK();
-
-    #pragma omp parallel for
-    for (int i = 1; i < sizeI - 1; i++) {
-        for (int j = 1; j < sizeJ - 1; j++) {
-            for (int k = 1; k < sizeK - 1; k++) {
-                b.getElem(i, j, k) = u(b.getX(i), b.getY(j), b.getZ(k), 0);
-            }
-        }
-    }
+    SAFE_CALL(cudaMemcpy(b.getData().data(), d_block, sizeof(double) * size, cudaMemcpyDeviceToHost));
 }
 
 void init_u1(Block &b, const Block &u0, double tau, Function3D &u) {
