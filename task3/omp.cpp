@@ -1,9 +1,5 @@
 #include "parallel.hpp"
 
-void test() {
-    return;
-}
-
 void init_u0(Block &b, Function3D &u) {
     int sizeI = b.getSizeI();
     int sizeJ = b.getSizeJ();

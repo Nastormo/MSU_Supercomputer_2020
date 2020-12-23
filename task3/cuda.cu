@@ -28,44 +28,6 @@
     } \
 }
 
-__global__ 
-void cuda_test(int* vec)
-{
-  int idx = threadIdx.x;
-  vec[idx] = vec[idx] + 1;
-}
-
-void test() {
-    int size = 128;
-    std::vector<int> vec (size, 0);
-
-    int* devVec;
-
-    SAFE_CALL(cudaMalloc((void**)&devVec, sizeof(int) * size));
-
-    SAFE_CALL(cudaMemcpy(devVec, vec.data(), sizeof(int) * size, cudaMemcpyHostToDevice));
-
-    dim3 gridSize = dim3(1, 1, 1);
-    dim3 blockSize = dim3(size, 1, 1);
-    cuda_test<<<gridSize, blockSize>>>(devVec);
-
-    cudaEvent_t syncEvent;
-
-    cudaEventCreate(&syncEvent);
-    cudaEventRecord(syncEvent, 0);
-    cudaEventSynchronize(syncEvent);
-    cudaMemcpy(vec.data(), devVec, sizeof(int) * size, cudaMemcpyDeviceToHost);
-
-    std::cout << vec[10] << std::endl;
-}
-
-__device__
-double u(double Lx, double Ly, double Lz, double a, double x, double y, double z, double t) {
-    return sin((M_PI / Lx) * x) * 
-        sin((M_PI / Ly) * y) * 
-        sin((M_PI / Lz) * z) *
-        cos(a * t);;
-}
 __constant__ double Lx;
 __constant__ double Ly;
 __constant__ double Lz;
@@ -82,6 +44,14 @@ __constant__ int sizeK;
 __constant__ double minI;
 __constant__ double minJ;
 __constant__ double minK;
+
+__device__
+double u(double Lx, double Ly, double Lz, double a, double x, double y, double z, double t) {
+    return sin((M_PI / Lx) * x) * 
+        sin((M_PI / Ly) * y) * 
+        sin((M_PI / Lz) * z) *
+        cos(a * t);;
+}
 
 __global__
 void u0(double* block)
@@ -180,8 +150,6 @@ void init_u1(Block &b, const Block &u0, double tau, Function3D &u) {
     int h_sizeK = b.getSizeK();
 
     int h_size = h_sizeI * h_sizeJ * h_sizeK;
-
-    std::cout << h_size << ' ' << b.getData().size() << ' ' << u0.getValData().size() << std::endl;
 
     int h_sizeBI = 1;
     int h_sizeBJ = 1;
