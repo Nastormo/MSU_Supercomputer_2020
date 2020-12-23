@@ -27,6 +27,7 @@ public:
     double getError(Function3D &u, double t) const;
 
     std::vector<double>& getData() { return _raw; }
+    std::vector<double> getValData() const { return _raw; }
 
     std::vector<int> getSize() { return _size; }
     int getSizeI() { return _size[0]; }

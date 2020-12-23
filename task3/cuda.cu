@@ -66,77 +66,149 @@ double u(double Lx, double Ly, double Lz, double a, double x, double y, double z
         sin((M_PI / Lz) * z) *
         cos(a * t);;
 }
+__constant__ double Lx;
+__constant__ double Ly;
+__constant__ double Lz;
+__constant__ double a_t;
+
+__constant__ double shiftX;
+__constant__ double shiftY;
+__constant__ double shiftZ;
+
+__constant__ int sizeI;
+__constant__ int sizeJ;
+__constant__ int sizeK;
+
+__constant__ double minI;
+__constant__ double minJ;
+__constant__ double minK;
 
 __global__
-void u0(double* block, 
-    double Lx, double Ly, double Lz, double a,
-    double shiftX, double shiftY, double shiftZ,
-    int sizeI, int sizeJ, int sizeK,
-    int minI, int minJ, int minK)
+void u0(double* block)
 {
     int i = blockIdx.z + 1;
     int j = blockIdx.y + 1;
     int k = threadIdx.x + 1;
-    block[i * (sizeJ * sizeK) + j * (sizeK) + k] = u(Lx, Lz, Lz, a,
+    block[i * (sizeJ * sizeK) + j * (sizeK) + k] = u(Lx, Lz, Lz, a_t,
         (i + minI) * shiftX, (j + minJ) * shiftY, (k + minK) * shiftZ, 0.0f);
 }
 
 void init_u0(Block &b, Function3D &u) {
-    double Lx = u.getLx();
-    double Ly = u.getLy();
-    double Lz = u.getLz();
-    double a = u.a_t();
+    double h_Lx = u.getLx();
+    double h_Ly = u.getLy();
+    double h_Lz = u.getLz();
+    double h_a_t = u.a_t();
 
-    double shiftX = b.getShiftX();
-    double shiftY = b.getShiftY();
-    double shiftZ = b.getShiftZ();
+    double h_shiftX = b.getShiftX();
+    double h_shiftY = b.getShiftY();
+    double h_shiftZ = b.getShiftZ();
 
-    int sizeI = b.getSizeI();
-    int sizeJ = b.getSizeJ();
-    int sizeK = b.getSizeK();
+    int h_sizeI = b.getSizeI();
+    int h_sizeJ = b.getSizeJ();
+    int h_sizeK = b.getSizeK();
 
-    int minI = b.getMinI();
-    int minJ = b.getMinJ();
-    int minK = b.getMinK();
+    int h_minI = b.getMinI();
+    int h_minJ = b.getMinJ();
+    int h_minK = b.getMinK();
 
-    int size = sizeI * sizeJ * sizeK;
+    int h_size = h_sizeI * h_sizeJ * h_sizeK;
 
-    int sizeBI = 1;
-    int sizeBJ = 1;
-    int sizeBK = sizeK - 2;
+    int h_sizeBI = 1;
+    int h_sizeBJ = 1;
+    int h_sizeBK = h_sizeK - 2;
 
     double* d_block;
 
-    SAFE_CALL(cudaMalloc((void**)&d_block, sizeof(double) * size));
+    SAFE_CALL(cudaMalloc((void**)&d_block, sizeof(double) * h_size));
 
-    dim3 grid = dim3((sizeK - 2) / sizeBK, (sizeJ - 2) / sizeBJ, (sizeI - 2) / sizeBI);
-    dim3 block = dim3(sizeBK, sizeBJ, sizeBI);
+    cudaMemcpyToSymbol(Lx, &h_Lx, sizeof(double));
+    cudaMemcpyToSymbol(Ly, &h_Ly, sizeof(double));
+    cudaMemcpyToSymbol(Lz, &h_Lz, sizeof(double));
+    cudaMemcpyToSymbol(a_t, &h_a_t, sizeof(double));
+
+    cudaMemcpyToSymbol(shiftX, &h_shiftX, sizeof(double));
+    cudaMemcpyToSymbol(shiftY, &h_shiftY, sizeof(double));
+    cudaMemcpyToSymbol(shiftZ, &h_shiftZ, sizeof(double));
+    
+    cudaMemcpyToSymbol(sizeI, &h_sizeI, sizeof(int));
+    cudaMemcpyToSymbol(sizeJ, &h_sizeJ, sizeof(int));
+    cudaMemcpyToSymbol(sizeK, &h_sizeK, sizeof(int));
+
+    cudaMemcpyToSymbol(minI, &h_minI, sizeof(int));
+    cudaMemcpyToSymbol(minJ, &h_minJ, sizeof(int));
+    cudaMemcpyToSymbol(minK, &h_minK, sizeof(int));
+
+    dim3 grid = dim3((h_sizeK - 2) / h_sizeBK, (h_sizeJ - 2) / h_sizeBJ, (h_sizeI - 2) / h_sizeBI);
+    dim3 block = dim3(h_sizeBK, h_sizeBJ, h_sizeBI);
 
     std::cout << grid.x << ' ' << grid.y << ' ' << grid.z << std::endl;
     std::cout << block.x << ' ' << block.y << ' ' << block.z << std::endl;
 
-    u0<<<grid, block>>>(d_block, 
-        Lx, Ly, Lz, a,
-        shiftX, shiftY, shiftZ, 
-        sizeI, sizeJ, sizeK, 
-        minI, minJ, minK);
+    u0<<<grid, block>>>(d_block);
 
-    SAFE_CALL(cudaMemcpy(b.getData().data(), d_block, sizeof(double) * size, cudaMemcpyDeviceToHost));
+    SAFE_CALL(cudaMemcpy(b.getData().data(), d_block, sizeof(double) * h_size, cudaMemcpyDeviceToHost));
+}
+
+__device__
+double getValElem(double* block, int i, int j, int k) {
+    return block[i * (sizeJ * sizeK) + j * sizeK + k];
+}
+
+__device__
+double lap_h(double* block, int i, int j, int k) {
+    return (getValElem(block, i - 1, j, k) - 2 * getValElem(block, i, j, k) + getValElem(block, i + 1, j, k)) / pow(shiftX, 2) + 
+        (getValElem(block, i, j - 1, k) - 2 * getValElem(block, i, j, k) + getValElem(block, i, j + 1, k)) / pow(shiftY, 2) +
+        (getValElem(block, i, j, k - 1) - 2 * getValElem(block, i, j, k) + getValElem(block, i, j, k + 1)) / pow(shiftZ, 2); 
+}
+
+__global__
+void u1(double* block, double* u0, double tau) {
+    int i = blockIdx.z + 1;
+    int j = blockIdx.y + 1;
+    int k = threadIdx.x + 1;
+    block[i * (sizeJ * sizeK) + j * (sizeK) + k] = u0[i * (sizeJ * sizeK) + j * (sizeK) + k] + 
+        (pow(tau, 2) / 2) * lap_h(block, i, j, k);
 }
 
 void init_u1(Block &b, const Block &u0, double tau, Function3D &u) {
-    int sizeI = b.getSizeI();
-    int sizeJ = b.getSizeJ();
-    int sizeK = b.getSizeK();
+    double h_shiftX = b.getShiftX();
+    double h_shiftY = b.getShiftY();
+    double h_shiftZ = b.getShiftZ();
 
-    #pragma omp parallel for
-    for (int i = 1; i < sizeI - 1; i++) {
-        for (int j = 1; j < sizeJ - 1; j++) {
-            for (int k = 1; k < sizeK - 1; k++) {
-                b.getElem(i, j, k) = u0.getValElem(i, j, k) + (pow(tau, 2) / 2) * u0.lap_h(i, j, k);
-            }
-        }
-    }
+    int h_sizeI = b.getSizeI();
+    int h_sizeJ = b.getSizeJ();
+    int h_sizeK = b.getSizeK();
+
+    int h_size = h_sizeI * h_sizeJ * h_sizeK;
+
+    std::cout << h_size << ' ' << b.getData().size() << ' ' << u0.getValData().size() << std::endl;
+
+    int h_sizeBI = 1;
+    int h_sizeBJ = 1;
+    int h_sizeBK = h_sizeK - 2;
+
+    dim3 grid = dim3((h_sizeK - 2) / h_sizeBK, (h_sizeJ - 2) / h_sizeBJ, (h_sizeI - 2) / h_sizeBI);
+    dim3 block = dim3(h_sizeBK, h_sizeBJ, h_sizeBI);
+
+    double* d_block;
+    double* d_u0;
+
+    SAFE_CALL(cudaMalloc((void**)&d_block, sizeof(double) * h_size));
+    SAFE_CALL(cudaMalloc((void**)&d_u0, sizeof(double) * h_size));
+
+    SAFE_CALL(cudaMemcpy(d_u0, u0.getValData().data(), sizeof(double) * h_size, cudaMemcpyHostToDevice));
+
+    cudaMemcpyToSymbol(shiftX, &h_shiftX, sizeof(double));
+    cudaMemcpyToSymbol(shiftY, &h_shiftY, sizeof(double));
+    cudaMemcpyToSymbol(shiftZ, &h_shiftZ, sizeof(double));
+    
+    cudaMemcpyToSymbol(sizeI, &h_sizeI, sizeof(int));
+    cudaMemcpyToSymbol(sizeJ, &h_sizeJ, sizeof(int));
+    cudaMemcpyToSymbol(sizeK, &h_sizeK, sizeof(int));
+
+    u1<<<grid, block>>>(d_block, d_u0, tau);
+
+    SAFE_CALL(cudaMemcpy(b.getData().data(), d_block, sizeof(double) * h_size, cudaMemcpyDeviceToHost));
 }
 
 void step(Block &u2, const Block& u1, const Block& u0, double tau, Function3D &u) {
