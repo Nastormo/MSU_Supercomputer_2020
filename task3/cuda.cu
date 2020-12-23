@@ -115,6 +115,7 @@ void init_u0(Block &b, Function3D &u) {
     u0<<<grid, block>>>(d_block);
 
     SAFE_CALL(cudaMemcpy(b.getData().data(), d_block, sizeof(double) * h_size, cudaMemcpyDeviceToHost));
+    cudaFree(d_block);
 }
 
 __device__
@@ -175,6 +176,8 @@ void init_u1(Block &b, const Block &u0, double tau, Function3D &u) {
     u1<<<grid, block>>>(d_block, d_u0, tau);
 
     SAFE_CALL(cudaMemcpy(b.getData().data(), d_block, sizeof(double) * h_size, cudaMemcpyDeviceToHost));
+    cudaFree(d_block);
+    cudaFree(d_u0);
 }
 
 __global__
@@ -226,6 +229,9 @@ void step(Block &b, const Block& u1, const Block& u0, double tau, Function3D &u)
     global_step<<<grid, block>>>(d_block, d_u1, d_u0, tau);
 
     SAFE_CALL(cudaMemcpy(b.getData().data(), d_block, sizeof(double) * h_size, cudaMemcpyDeviceToHost));
+    cudaFree(d_block);
+    cudaFree(d_u1);
+    cudaFree(d_u0);
 }
 
 __global__
