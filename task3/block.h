@@ -29,15 +29,17 @@ public:
     std::vector<double>& getData() { return _raw; }
     std::vector<double> getValData() const { return _raw; }
 
-    std::vector<int> getSize() { return _size; }
+    std::vector<int> getSize() const { return _size; }
     int getSizeI() const { return _size[0]; }
     int getSizeJ() const { return _size[1]; }
     int getSizeK() const { return _size[2]; }
 
+    std::vector<int> getMin() const { return _min; }
     int getMinI() const { return _min[0]; }
     int getMinJ() const { return _min[1]; }
     int getMinK() const { return _min[2]; }
 
+    std::vector<double> getShift() const { return _shift; }
     double getShiftX() const { return _shift[0]; }
     double getShiftY() const { return _shift[1]; }
     double getShiftZ() const { return _shift[2]; }
