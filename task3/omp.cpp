@@ -51,7 +51,7 @@ double getError(const Block &b, Function3D &u, double t) {
     int sizeK = b.getSizeK();
 
     double error = 0;
-    #pragma omp parallel for
+    #pragma omp parallel for reduction(max : error)
     for (int i = 1; i < sizeI - 1; i++) {
         for (int j = 1; j < sizeJ - 1; j++) {
             for (int k = 1; k < sizeK - 1; k++) {
