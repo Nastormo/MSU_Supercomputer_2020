@@ -1,3 +1,5 @@
 /cuda_main
 /omp_main
 /main
+/nvvp
+/.vscode

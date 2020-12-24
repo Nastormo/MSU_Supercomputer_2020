@@ -30,6 +30,8 @@
     } \
 }
 
+double* d_block;
+
 __constant__ double a_t;
 __constant__ double L[3];
 __constant__ double bshift[3];
@@ -50,8 +52,9 @@ void u0(double* block)
     int i = blockIdx.z + 1;
     int j = blockIdx.y + 1;
     int k = threadIdx.x + 1;
-    block[i * (bsize[1] * bsize[2]) + j * (bsize[2]) + k] = 
-        u((i + bmin[0]) * bshift[0], (j + bmin[1]) * bshift[1], (k + bmin[2]) * bshift[2], 0.0f);
+    int ind = i * (bsize[1] * bsize[2]) + j * bsize[2] + k;
+    block[ind] = 
+        u((i + bmin[0]) * bshift[0], (j + bmin[1]) * bshift[1], (k + bmin[2]) * bshift[2], 0);
 }
 
 void init_u0(Block &b, Function3D &u) {
@@ -62,8 +65,6 @@ void init_u0(Block &b, Function3D &u) {
     std::vector<int> h_bmin = b.getMin();
 
     int h_size = h_bsize[0] * h_bsize[1] * h_bsize[2];
-
-    double* d_block;
 
     SAFE_CALL(cudaMalloc((void**)&d_block, sizeof(double) * h_size));
 
@@ -79,7 +80,6 @@ void init_u0(Block &b, Function3D &u) {
     u0<<<grid, block>>>(d_block);
 
     SAFE_CALL(cudaMemcpy(b.getData().data(), d_block, sizeof(double) * h_size, cudaMemcpyDeviceToHost));
-    cudaFree(d_block);
 }
 
 __device__
@@ -110,10 +110,8 @@ void init_u1(Block &b, const Block &u0, double tau, Function3D &u) {
 
     int h_size = h_bsize[0] * h_bsize[1] * h_bsize[2];
 
-    double* d_block;
     double* d_u0;
 
-    SAFE_CALL(cudaMalloc((void**)&d_block, sizeof(double) * h_size));
     SAFE_CALL(cudaMalloc((void**)&d_u0, sizeof(double) * h_size));
 
     SAFE_CALL(cudaMemcpy(d_u0, u0.getValData().data(), sizeof(double) * h_size, cudaMemcpyHostToDevice));
@@ -127,7 +125,6 @@ void init_u1(Block &b, const Block &u0, double tau, Function3D &u) {
     u1<<<grid, block>>>(d_block, d_u0, tau);
 
     SAFE_CALL(cudaMemcpy(b.getData().data(), d_block, sizeof(double) * h_size, cudaMemcpyDeviceToHost));
-    cudaFree(d_block);
     cudaFree(d_u0);
 }
 
@@ -146,11 +143,9 @@ void step(Block &b, const Block& u1, const Block& u0, double tau, Function3D &u)
 
     int h_size = h_bsize[0] * h_bsize[1] * h_bsize[2];
 
-    double* d_block;
     double* d_u1;
     double* d_u0;
 
-    SAFE_CALL(cudaMalloc((void**)&d_block, sizeof(double) * h_size));
     SAFE_CALL(cudaMalloc((void**)&d_u1, sizeof(double) * h_size));
     SAFE_CALL(cudaMalloc((void**)&d_u0, sizeof(double) * h_size));
 
@@ -166,7 +161,6 @@ void step(Block &b, const Block& u1, const Block& u0, double tau, Function3D &u)
     global_step<<<grid, block>>>(d_block, d_u1, d_u0, tau);
 
     SAFE_CALL(cudaMemcpy(b.getData().data(), d_block, sizeof(double) * h_size, cudaMemcpyDeviceToHost));
-    cudaFree(d_block);
     cudaFree(d_u1);
     cudaFree(d_u0);
 }
@@ -195,13 +189,13 @@ void calcErrorK(double* d_error, double* block, double t) {
 }
 
 __global__
-void calcErrorJ(double* d_error) {
+void calcErrorJ(double* d_errorJ, double* d_errorK) {
     extern __shared__ double sdata[];
 
     int tid = threadIdx.x;
     int ind = blockDim.x * blockIdx.y + threadIdx.x;
 
-    sdata[tid] = d_error[ind];
+    sdata[tid] = d_errorK[ind];
     __syncthreads();
 
     for (unsigned int s=blockDim.x/2; s>0; s>>=1) {
@@ -211,17 +205,16 @@ void calcErrorJ(double* d_error) {
         __syncthreads();
     }
 
-    if (tid == 0) d_error[blockDim.x * blockIdx.y] = sdata[0];
+    if (tid == 0) d_errorJ[blockIdx.y] = sdata[0];
 }
 
 __global__
-void calcErrorI(double* d_error, int size) {
+void calcErrorI(double* d_errorJ) {
     extern __shared__ double sdata[];
 
     int tid = threadIdx.x;
-    int ind = size * threadIdx.x;
 
-    sdata[tid] = d_error[ind];
+    sdata[tid] = d_errorJ[tid];
     __syncthreads();
 
     for (unsigned int s=blockDim.x/2; s>0; s>>=1) {
@@ -231,7 +224,7 @@ void calcErrorI(double* d_error, int size) {
         __syncthreads();
     }
 
-    if (tid == 0) d_error[0] = sdata[0];
+    if (tid == 0) d_errorJ[0] = sdata[0];
 }
 
 double getError(const Block &b, Function3D &u, double t) {
@@ -248,37 +241,35 @@ double getError(const Block &b, Function3D &u, double t) {
     dim3 grid;
     dim3 block;
 
-    double* d_error;
-    double* d_block;
+    double* d_errorK;
+    double* d_errorJ;
 
-    SAFE_CALL(cudaMalloc((void**)&d_error, sizeof(double) * (h_bsize[0] - 2) * (h_bsize[1] - 2)));
-    SAFE_CALL(cudaMalloc((void**)&d_block, sizeof(double) * h_size));
+    SAFE_CALL(cudaMalloc((void**)&d_errorK, sizeof(double) * (h_bsize[0] - 2) * (h_bsize[1] - 2)));
+    SAFE_CALL(cudaMalloc((void**)&d_errorJ, sizeof(double) * (h_bsize[0] - 2)));
 
-    SAFE_CALL(cudaMemcpy(d_block, b.getValData().data(), sizeof(double) * h_size, cudaMemcpyHostToDevice));
-
-    cudaMemcpyToSymbol(a_t, &h_a_t, sizeof(double));
-    cudaMemcpyToSymbol(L, h_L.data(), sizeof(double) * 3);
-    cudaMemcpyToSymbol(bshift, h_bshift.data(), sizeof(double) * 3);
-    cudaMemcpyToSymbol(bsize, h_bsize.data(), sizeof(int) * 3);
+    SAFE_CALL(cudaMemcpyToSymbol(a_t, &h_a_t, sizeof(double)));
+    SAFE_CALL(cudaMemcpyToSymbol(L, h_L.data(), sizeof(double) * 3));
+    SAFE_CALL(cudaMemcpyToSymbol(bshift, h_bshift.data(), sizeof(double) * 3));
+    SAFE_CALL(cudaMemcpyToSymbol(bsize, h_bsize.data(), sizeof(int) * 3));
     SAFE_CALL(cudaMemcpyToSymbol(bmin, h_bmin.data(), sizeof(int) * 3));
 
     grid = dim3(1, (h_bsize[1] - 2), (h_bsize[0] - 2));
     block = dim3(h_bsize[2] - 2, 1, 1);
 
-    calcErrorK<<<grid, block, block.x * sizeof(double)>>>(d_error, d_block, t);
+    calcErrorK<<<grid, block, block.x * sizeof(double)>>>(d_errorK, d_block, t);
 
     grid = dim3(1, (h_bsize[0] - 2), 1);
     block = dim3(h_bsize[1] - 2, 1, 1);
 
-    calcErrorJ<<<grid, block, block.x * sizeof(double)>>>(d_error);
+    calcErrorJ<<<grid, block, block.x * sizeof(double)>>>(d_errorJ, d_errorK);
 
     grid = dim3(1, 1, 1);
     block = dim3(h_bsize[0] - 2, 1, 1);
 
-    calcErrorI<<<grid, block, block.x * sizeof(double)>>>(d_error, h_bsize[1] - 2);
+    calcErrorI<<<grid, block, block.x * sizeof(double)>>>(d_errorJ);
 
-    SAFE_CALL(cudaMemcpy(&h_error, d_error, sizeof(double), cudaMemcpyDeviceToHost));
-    cudaFree(d_error);
-    cudaFree(d_block);
+    SAFE_CALL(cudaMemcpy(&h_error, d_errorJ, sizeof(double), cudaMemcpyDeviceToHost));
+    cudaFree(d_errorK);
+    cudaFree(d_errorJ);
     return h_error;
 }
