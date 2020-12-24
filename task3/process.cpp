@@ -45,18 +45,12 @@ Process::~Process() {
 }
 
 void Process::printError(const Block& b, Function3D &u, double t) {
-    double error = getError(b, u, t);
+    double otherError = getError(b, u, t);
+    double error; 
+
+    MPI_Reduce(&otherError, &error, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     if (_rank == 0) {
-        double otherError;
-        for (int i = 1; i < _p_count; i++) {
-            MPI_Recv(&otherError, 1, MPI_DOUBLE,
-                i, 1, MPI_COMM_WORLD, &_status);
-            error = std::max(otherError, error);
-        }
         std::cout << "t: " << t << " Error: " << error << std::endl;
-    } else {
-        MPI_Isend(&error, 1, MPI_DOUBLE, 
-            0, 1, MPI_COMM_WORLD, &_request);
     }
 }
 
@@ -80,6 +74,9 @@ void Process::update(Block &b) {
         Send(sUSlice, axis, 1);
         rDSlice = Recv(axis, -1);
         b.setSlice(rDSlice, axis, 0);
+
+        // if(_rank == 1) std::cout << axis << ' ' << rDSlice[10] << std::endl;
+        // if(_rank == 0) std::cout << axis << ' ' << sUSlice[10] << std::endl;
 
         MPI_Barrier(MPI_COMM_WORLD);
     }
