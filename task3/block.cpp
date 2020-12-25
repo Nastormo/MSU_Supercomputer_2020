@@ -50,7 +50,7 @@ void Block::printDiff(Function3D& u, double t) const {
 
 double Block::getError(Function3D& u, double t) const {
     double error = 0;
-    #pragma omp parallel for
+    #pragma omp parallel for reduction(max : error)
     for (int i = 1; i < _size[0] - 1; i++) {
         for (int j = 1; j < _size[1] - 1; j++) {
             for (int k = 1; k < _size[2] - 1; k++) {
@@ -66,16 +66,6 @@ double Block::getValElem(int i, int j, int k) const {
 }
 
 double& Block::getElem(int i, int j, int k) {
-    return _raw[i * (_size[1] * _size[2]) + j * _size[2] + k];
-}
-
-double& Block::operator()(int i, int j, int k) {
-    return _raw[(i + 1 - _min[0]) * (_size[1] * _size[2]) + 
-        (j + 1 - _min[1]) * _size[2] + (k + 1 - _min[2])];
-}  
-
-//TODO
-double Block::operator()(int i, int j, int k) const {
     return _raw[i * (_size[1] * _size[2]) + j * _size[2] + k];
 }
 

@@ -1,5 +1,4 @@
 #include "process.h"
-#include "parallel.hpp"
 
 Process::Process(Config conf)
 {
@@ -44,8 +43,7 @@ Process::~Process() {
     MPI_Finalize();
 }
 
-void Process::printError(const Block& b, Function3D &u, double t) {
-    double otherError = getError(b, u, t);
+void Process::printError(double t, double otherError) {
     double error; 
 
     MPI_Reduce(&otherError, &error, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
@@ -74,9 +72,6 @@ void Process::update(Block &b) {
         Send(sUSlice, axis, 1);
         rDSlice = Recv(axis, -1);
         b.setSlice(rDSlice, axis, 0);
-
-        // if(_rank == 1) std::cout << axis << ' ' << rDSlice[10] << std::endl;
-        // if(_rank == 0) std::cout << axis << ' ' << sUSlice[10] << std::endl;
 
         MPI_Barrier(MPI_COMM_WORLD);
     }

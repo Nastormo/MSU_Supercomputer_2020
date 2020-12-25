@@ -6,11 +6,17 @@
 #include <cmath>
 #include <string>
 #include <fstream>
+#include <iostream>
 
 #include "function.h"
 
 class Block {
     std::vector<double> _raw;
+    
+    double* _d_raw;
+    double* _d_errorK;
+    double* _d_errorJ;
+    double* _d_slice;
 
     std::vector<double> _shift;
     std::vector<int> _size;
@@ -20,6 +26,9 @@ public:
     Block(std::vector<int>& size, std::vector<int>& min, 
         std::vector<double>& shift);
 
+    void init_cuda();
+    void destroy_cuda();
+
     void printBlock() const;
     void printDiff(Function3D &u, double t) const;
     void saveBlock(std::string &str) const;
@@ -28,6 +37,7 @@ public:
 
     std::vector<double>& getData() { return _raw; }
     std::vector<double> getValData() const { return _raw; }
+    double* getDataLink() { return _d_raw; }
 
     std::vector<int> getSize() const { return _size; }
     int getSizeI() const { return _size[0]; }
@@ -47,9 +57,6 @@ public:
     double getX(int i) const { return (i + _min[0]) * _shift[0]; }
     double getY(int j) const { return (j + _min[1]) * _shift[1]; }
     double getZ(int k) const { return (k + _min[2]) * _shift[2]; }
-
-    double &operator()(int i, int j, int k);
-    double operator()(int i, int j, int k) const;
 
     double& getElem(int i, int j, int k);
     double getValElem(int i, int j, int k) const;

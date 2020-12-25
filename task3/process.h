@@ -32,7 +32,7 @@ public:
     Process(Config conf);
     ~Process();
 
-    void printError(const Block& b, Function3D &u, double t);
+    void printError(double t, double otherError);
 
     void update(Block &b);
 
@@ -49,9 +49,9 @@ public:
     int getK() { return _position[2]; }
 
     std::vector<int> getSize() { return _bsize; }
-    int getSizeX() { return _bsize[0]; }
-    int getSizeY() { return _bsize[1]; }
-    int getSizeZ() { return _bsize[2]; }
+    int getSizeI() { return _bsize[0]; }
+    int getSizeJ() { return _bsize[1]; }
+    int getSizeK() { return _bsize[2]; }
 
     std::vector<int> getMin() { return _bmin; }
     int get_i() { return _bmin[0]; }
